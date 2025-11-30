@@ -1,17 +1,16 @@
 import os
 import pandas as pd
-from groq import Groq
-from utils import merge_data_files, extract_content_between_tags
-from model_handler import ModelHandler
-from local_model import LocalModel
-from dotenv import load_dotenv
-
-load_dotenv()
+from utils import merge_data_files, extract_content_between_tags, initialize_model
+import time
 
 
 class MeetingChallengesEvaluator:
-    def __init__(self, from_local_model=True):
+    def __init__(self, input_df, task, meeting_language, from_local_model):
+        self.input_df = input_df
+        self.task = task
+        self.meeting_language = meeting_language
         self.from_local_model = from_local_model
+
         self.challenges = {
             "Spoken language": {
                 "definition": (
@@ -92,33 +91,8 @@ class MeetingChallengesEvaluator:
             },
         }
 
-    def initialize_model(self):
-        if self.from_local_model:
-            model_name = "mistralai/Mistral-7B-Instruct-v0.3"
-            model_init = LocalModel(
-                model_name=model_name,
-                max_new_tokens=1000,
-            )
-        else:
-            client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-            model_name = "llama-3.1-8b-instant"
-            model_init = ModelHandler(
-                client=client, model_name=model_name, max_tokens=1000
-            )
-
-        meeting_language = "English"
-        task = "meeting_challenges_assess"
-        save_dir = os.path.join("evaluation", f"{meeting_language}", f"{task}")
-        os.makedirs(save_dir, exist_ok=True)
-        save_path = os.path.join(
-            save_dir, f"{model_name.split('/')[-1]}_meeting_challenges_eval.csv"
-        )
-
-        return model_init, save_path
-
-    def evaluate_meeting_challenges(self, meeting_transcript):
+    def evaluate_meeting_challenges(self, model_init, meeting_transcript):
         results = {}
-        model_init, save_path = self.initialize_model()
 
         for dimension, info in self.challenges.items():
             definition = info["definition"]
@@ -163,44 +137,54 @@ class MeetingChallengesEvaluator:
                 "confidence": confidence,
                 "score": score,
             }
-        return results, save_path
+        return results
 
-
-def process_meeting_challenges(input_df):
-    challenge_evaluator = MeetingChallengesEvaluator()
-    output_df = pd.DataFrame()
-
-    for idx, row in input_df[:1].iterrows():
-        print(f"Processing meeting {idx} / {len(input_df)}\n")
-        title = row["Title"]
-        meeting_transcript = row["Meeting"]
-        challenge_scores, save_path = challenge_evaluator.evaluate_meeting_challenges(
-            meeting_transcript
+    def process_meeting_challenges(self):
+        input_df = self.input_df[:20]
+        start_idx = input_df.index[0]
+        end_idx = input_df.index[-1]
+        model_init, save_path = initialize_model(
+            self.task, self.meeting_language, self.from_local_model
         )
+        root_filename = save_path.split(".csv")[0]
+        root_filename += f"_{start_idx}_{end_idx}.csv"
+        dir_name = os.path.dirname(save_path)
+        save_path = os.path.join(dir_name, root_filename)
 
-        row_results = {"title": title, "meeting_transcript": [meeting_transcript]}
-        for dimension, outcomes in challenge_scores.items():
-            dim_key = dimension.replace(" ", "_")
-            row_results[f"{dim_key}_Score"] = outcomes["score"]
-            row_results[f"{dim_key}_Confidence"] = outcomes["confidence"]
-            row_results[f"{dim_key}_Reasoning"] = outcomes["reasoning"]
+        all_results = []
+        start_loop = time.time()
+        for idx, row in input_df[start_idx:end_idx].iterrows():
+            print(f"Processing meeting {idx} / {len(input_df)}\n")
+            title = row["Title"]
+            meeting_transcript = row["Meeting"]
+            challenge_scores = self.evaluate_meeting_challenges(
+                model_init, meeting_transcript
+            )
+            if not challenge_scores:
+                print(f"No challenge scores for idx {idx}, skipping...\n")
+                continue
 
-        results_to_save = {k: [v] for k, v in row_results.items()}
-        output_df = pd.concat(
-            [
-                output_df,
-                pd.DataFrame({**results_to_save}),
-            ],
-            axis=0,
-            ignore_index=True,
-        )
-        output_df = output_df.reset_index(drop=True)
+            row_results = {"title": title, "meeting_transcript": meeting_transcript}
+            for dimension, outcomes in challenge_scores.items():
+                dim_key = dimension.replace(" ", "_")
+                row_results[f"{dim_key}_Score"] = outcomes["score"]
+                row_results[f"{dim_key}_Confidence"] = outcomes["confidence"]
+                row_results[f"{dim_key}_Reasoning"] = outcomes["reasoning"]
+
+            all_results.append(row_results)
+
+        print(f"Loop time: {(time.time() - start_loop)/60:.2f} minutes\n")
+        output_df = pd.DataFrame(all_results)
         output_df.to_csv(save_path, header=True, index=False)
         print(f"Challenge evaluation results saved to {save_path}\n")
-
-    return output_df
 
 
 if __name__ == "__main__":
     eng_meetings_df = merge_data_files("data/fame_dataset", "English")
-    challenges_results_df = process_meeting_challenges(eng_meetings_df)
+    meeting_evaluator = MeetingChallengesEvaluator(
+        task="meeting_challenges_assess",
+        meeting_language="English",
+        from_local_model=False,
+        input_df=eng_meetings_df,
+    )
+    meeting_evaluator.process_meeting_challenges()

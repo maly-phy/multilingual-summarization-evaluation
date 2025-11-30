@@ -4,6 +4,12 @@ import gc
 import torch
 import glob
 import pandas as pd
+from groq import Groq
+from model_handler import ModelHandler
+from local_model import LocalModel
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 def extract_content_between_tags(text, tag):
@@ -40,7 +46,24 @@ def merge_data_files(data_dir, language):
     return meetings_df
 
 
-if __name__ == "__main__":
-    eng_meetings_df = merge_data_files("data/fame_dataset", "English")
-    row = eng_meetings_df.iloc[0]
-    print(row["Meeting_Plan"], "\n")
+def initialize_model(
+    task="meeting_challenges_assess", meeting_language="English", from_local_model=False
+):
+    if from_local_model:
+        model_name = "mistralai/Mistral-7B-Instruct-v0.3"
+        model_init = LocalModel(
+            model_name=model_name,
+            max_new_tokens=1000,
+        )
+    else:
+        client = Groq(api_key=os.getenv("GROQ_API_KEY"))
+        model_name = "llama-3.1-8b-instant"
+        model_init = ModelHandler(client=client, model_name=model_name, max_tokens=1000)
+
+    save_dir = os.path.join("evaluation", f"{meeting_language}", f"{task}")
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(
+        save_dir, f"{model_name.split('/')[-1]}_meeting_challenges_eval.csv"
+    )
+
+    return model_init, save_path
