@@ -7,15 +7,29 @@ class ModelHandler:
         self.model_name = model_name
         self.max_tokens = max_tokens
 
+    def base_call_model(self, messages):
+        response = self.client.chat.completions.create(
+            messages=messages,
+            model=self.model_name,
+            max_tokens=self.max_tokens,
+            temperature=0.0,
+            top_p=0.95,
+            frequency_penalty=0.5,
+            presence_penalty=0.5,
+            stop=None,
+            n=1,
+        )
+        return response
+
     def call_model(self, system_prompt, user_prompt, max_attempts=6, base_delay=3.0):
+        messages = [
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt},
+        ]
         for attempt in range(max_attempts):
             try:
-                messages = [
-                    {"role": "system", "content": system_prompt},
-                    {"role": "user", "content": user_prompt},
-                ]
                 response = self.base_call_model(messages=messages)
-                response.choices[0].message.content.strip()
+                response = response.choices[0].message.content.strip()
                 return response
 
             except Exception as e:
@@ -36,17 +50,3 @@ class ModelHandler:
 
             finally:
                 time.sleep(base_delay)
-
-    def base_call_model(self, messages):
-        response = self.client.chat.completions.create(
-            messages=messages,
-            model=self.model_name,
-            max_tokens=self.max_tokens,
-            temperature=0.0,
-            top_p=0.95,
-            frequency_penalty=0.5,
-            presence_penalty=0.5,
-            stop=None,
-            n=1,
-        )
-        return response
