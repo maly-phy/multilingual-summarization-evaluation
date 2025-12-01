@@ -114,7 +114,9 @@ class MeetingChallengesEvaluator:
                 "<reasoning>...</reasoning>\n"
                 "<confidence>...</confidence>\n"
                 "<score>...</score>\n\n"
-                "Do NOT include any text outside these tags."
+                "Do NOT include any text outside these tags.\n"
+                "**Strictly Important:**\n"
+                "- You MUST NOT include any reasoning text with either the confidence score or the final score for any dimension."
             )
 
             user_prompt = (
@@ -137,19 +139,26 @@ class MeetingChallengesEvaluator:
                 "confidence": confidence,
                 "score": score,
             }
+
+        for dimension, outcome in results.items():
+            print(
+                f"{dimension}: {outcome['score']}, Confidence: {outcome['confidence']}\n"
+            )
+
         return results
 
     def process_meeting_challenges(self):
-        input_df = self.input_df[:20]
+        input_df = self.input_df[:2]
         start_idx = input_df.index[0]
         end_idx = input_df.index[-1]
         model_init, save_path = initialize_model(
             self.task, self.meeting_language, self.from_local_model
         )
-        root_filename = save_path.split(".csv")[0]
-        root_filename += f"_{start_idx}_{end_idx}.csv"
+        root_filename = os.path.basename(save_path).replace(".csv", "")
+        root_filename += f"_{start_idx}_{end_idx}_clean.csv"
         dir_name = os.path.dirname(save_path)
         save_path = os.path.join(dir_name, root_filename)
+        print(f"save_path: {save_path}")
 
         all_results = []
         start_loop = time.time()
