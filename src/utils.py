@@ -13,13 +13,13 @@ load_dotenv()
 
 
 def extract_content_between_tags(text, tag):
-    pattern = f"<{tag}>(.*?)</{tag}>"
+    pattern = f"<{tag}>\s*([0-9]+%?)"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
     if match:
         return match.group(1).strip()
     else:
-        clean_text = text.replace(f"<{tag}>", "").replace(f"</{tag}>", "")
-        return clean_text.strip()
+        print(f"Tag <{tag}> not found in the text.")
+        return text
 
 
 def free_memory(device):
@@ -62,8 +62,6 @@ def initialize_model(
 
     save_dir = os.path.join("evaluation", f"{meeting_language}", f"{task}")
     os.makedirs(save_dir, exist_ok=True)
-    save_path = os.path.join(
-        save_dir, f"{model_name.split('/')[-1]}_meeting_challenges_eval.csv"
-    )
+    save_path = os.path.join(save_dir, f"{model_name.split('/')[-1]}_{task}.csv")
 
     return model_init, save_path
