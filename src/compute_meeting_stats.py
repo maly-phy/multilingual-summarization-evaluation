@@ -10,8 +10,9 @@ import os
 
 
 class SyntheticMeetingAnalyzer:
-    def __init__(self, input_df):
+    def __init__(self, input_df, language):
         self.input_df = input_df
+        self.language = language
         self.meeting_data = self.load_meetings()
 
     def load_meetings(self):
@@ -153,7 +154,7 @@ class SyntheticMeetingAnalyzer:
         return summary_stats
 
     def tokenize(self, text):
-        tokens = nltk.word_tokenize(text.lower())
+        tokens = nltk.word_tokenize(text.lower(), language=self.language.lower())
         tokens_wout_puncts = [t for t in tokens if t.isalnum()]
         return tokens_wout_puncts
 
@@ -196,6 +197,9 @@ class SyntheticMeetingAnalyzer:
 
 if __name__ == "__main__":
     os.makedirs("outputs", exist_ok=True)
-    eng_meetings_df = merge_data_files("data/fame_dataset", "English")
-    analyzer = SyntheticMeetingAnalyzer(eng_meetings_df)
-    analyzer.write_state_to_file("outputs/meeting_analysis.txt")
+    language = "German"
+    eng_meetings_df = merge_data_files("data/fame_dataset", f"{language}")
+    analyzer = SyntheticMeetingAnalyzer(eng_meetings_df, language=language)
+    analyzer.write_state_to_file(
+        f"outputs/statistic_analysis/meeting_analysis_{language.lower()}.txt"
+    )

@@ -5,11 +5,12 @@ import time
 
 
 class MeetingChallengesEvaluator:
-    def __init__(self, input_df, task, meeting_language, from_local_model):
-        self.input_df = input_df
+    def __init__(self, df, task, language, from_local_model, max_tokens):
+        self.df = df
         self.task = task
-        self.meeting_language = meeting_language
+        self.language = language
         self.from_local_model = from_local_model
+        self.max_tokens = max_tokens
 
         self.challenges = {
             "Spoken language": {
@@ -103,7 +104,8 @@ class MeetingChallengesEvaluator:
                 f"Definition: {definition}\n"
                 f"Instructions:\n{instructions}\n"
                 "You must:\n"
-                "- Provide a step-by-step reasoning about how the challenge is present (or not) in the transcript.\n"
+                f"- Consider the language of the transcript provided, which is {self.language}. \n"
+                f"- Provide a step-by-step reasoning in only 1-2 sentences in {self.language} about how the challenge is present (or not) in the transcript.\n"
                 "- Give a confidence score (0-100%).\n"
                 "- Provide a final numeric rating (0 to 5), following the scoring guide:\n"
                 "  0: Not observed.\n"
@@ -121,7 +123,7 @@ class MeetingChallengesEvaluator:
 
             user_prompt = (
                 f"Meeting Transcript:\n\n{meeting_transcript}\n\n"
-                "Please identify how challenging this dimension is for summarization."
+                f"Please identify how challenging this dimension is for summarization in {self.language} context."
             )
 
             response = model_init.call_model(system_prompt, user_prompt)
@@ -131,7 +133,7 @@ class MeetingChallengesEvaluator:
                 break
 
             reasoning = extract_content_between_tags(response, "reasoning")
-            confidence = extract_content_between_tags(response, "confidence_score")
+            confidence = extract_content_between_tags(response, "confidence")
             score = extract_content_between_tags(response, "score")
 
             results[dimension] = {
@@ -140,30 +142,24 @@ class MeetingChallengesEvaluator:
                 "score": score,
             }
 
-        for dimension, outcome in results.items():
-            print(
-                f"{dimension}: {outcome['score']}, Confidence: {outcome['confidence']}\n"
-            )
-
         return results
 
     def process_meeting_challenges(self):
-        input_df = self.input_df[:2]
-        start_idx = input_df.index[0]
-        end_idx = input_df.index[-1]
+        df = self.df[:30]
+        start_idx = df.index[0]
+        end_idx = df.index[-1]
         model_init, save_path = initialize_model(
-            self.task, self.meeting_language, self.from_local_model
+            self.task, self.language, self.from_local_model
         )
         root_filename = os.path.basename(save_path).replace(".csv", "")
-        root_filename += f"_{start_idx}_{end_idx}_clean.csv"
+        root_filename += f"_{start_idx}_{end_idx}.csv"
         dir_name = os.path.dirname(save_path)
         save_path = os.path.join(dir_name, root_filename)
         print(f"save_path: {save_path}")
 
         all_results = []
         start_loop = time.time()
-        for idx, row in input_df[start_idx:end_idx].iterrows():
-            print(f"Processing meeting {idx} / {len(input_df)}\n")
+        for idx, row in df[start_idx:end_idx].iterrows():
             title = row["Title"]
             meeting_transcript = row["Meeting"]
             challenge_scores = self.evaluate_meeting_challenges(
@@ -173,7 +169,16 @@ class MeetingChallengesEvaluator:
                 print(f"No challenge scores for idx {idx}, skipping...\n")
                 continue
 
-            row_results = {"title": title, "meeting_transcript": meeting_transcript}
+            if idx % 4 == 0:
+                print(f"\nProcessing {idx} / {len(df)}\n")
+                for criterion, results in challenge_scores.items():
+                    print(f"{criterion}:\n")
+                    for key, value in results.items():
+                        if key == "Meeting" or key == "Title":
+                            continue
+                        print(f"{key}: {value}\n")
+
+            row_results = {"Title": title, "Meeting": meeting_transcript}
             for dimension, outcomes in challenge_scores.items():
                 dim_key = dimension.replace(" ", "_")
                 row_results[f"{dim_key}_Score"] = outcomes["score"]
@@ -182,18 +187,20 @@ class MeetingChallengesEvaluator:
 
             all_results.append(row_results)
 
-        print(f"Loop time: {(time.time() - start_loop)/60:.2f} minutes\n")
+        print(f"\nLoop time: {(time.time() - start_loop)/60:.2f} minutes\n")
         output_df = pd.DataFrame(all_results)
         output_df.to_csv(save_path, header=True, index=False)
         print(f"Challenge evaluation results saved to {save_path}\n")
 
 
 if __name__ == "__main__":
-    eng_meetings_df = merge_data_files("data/fame_dataset", "English")
+    language = "German"
+    task = "meeting_challenges_eval"
+    max_tokens = 310
+    from_local_model = False
+
+    meetings_df = merge_data_files("data/fame_dataset", language)
     meeting_evaluator = MeetingChallengesEvaluator(
-        task="meeting_challenges_assess",
-        meeting_language="English",
-        from_local_model=False,
-        input_df=eng_meetings_df,
+        meetings_df, task, language, from_local_model, max_tokens
     )
     meeting_evaluator.process_meeting_challenges()

@@ -6,10 +6,10 @@ pd.set_option("display.max_columns", 500)
 pd.set_option("display.width", 500)
 
 
-def report_df(file_path):
+def report_df(file_path, language):
     df = pd.read_csv(file_path)
     if "meeting_challenges" in file_path:
-        df = preprocess_llm_scores(df)
+        df = preprocess_llm_scores(df, language)
     elif "basic_meeting" in file_path:
         df = clean_basic_meeting_eval(df)
 
@@ -21,10 +21,10 @@ def report_df(file_path):
     return df
 
 
-def aggregate_scores(file_path):
+def aggregate_scores(file_path, language):
     df = pd.read_csv(file_path)
     if "meeting_challenges" in file_path:
-        df = preprocess_llm_scores(df)
+        df = preprocess_llm_scores(df, language)
     elif "basic_meeting" in file_path:
         df = clean_basic_meeting_eval(df)
 
@@ -37,15 +37,27 @@ def aggregate_scores(file_path):
     return agg_df
 
 
-def save_scores(agg_df, task):
-    save_dir = os.path.join("evaluation", "English", f"{task}_eval")
+def save_scores(agg_df, language, task):
+    save_dir = os.path.join("evaluation", language, f"{task}_eval")
     with open(os.path.join(save_dir, "agg_scores.txt"), "w") as f:
         for k, v in agg_df.items():
             f.write(f"{k}: {v[0]}\n\n")
 
 
+def append_scores_to_file(file_path, agg_df):
+    with open(file_path, "a") as f:
+        for k, v in agg_df.items():
+            f.write(f"{k}: {v[0]}\n\n")
+
+
 if __name__ == "__main__":
-    file_path = "evaluation/English/basic_meeting_eval/llama-3.1-8b-instant_basic_meeting_eval_0_19.csv"
-    agg_df = aggregate_scores(file_path)
-    save_scores(agg_df, "basic_meeting")
-    print(agg_df)
+    task = "summary_eval"
+    language = "English"
+    file_path = (
+        f"evaluation/{language}/summary_eval/llama-3.1-8b-instant_{task}_with_LAR.csv"
+    )
+    scores_file = f"evaluation/{language}/summary_eval/agg_scores.txt"
+    df = pd.read_csv(file_path)
+    df["LAR_mean"] = df["LAR"].mean()
+    df["LAR_std"] = df["LAR"].std()
+    append_scores_to_file(scores_file, df[["LAR_mean", "LAR_std"]])
