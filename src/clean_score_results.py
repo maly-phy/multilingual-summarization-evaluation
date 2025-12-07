@@ -15,7 +15,7 @@ def convert_confidence(value):
         return None
 
 
-def preprocess_llm_scores(df):
+def preprocess_llm_scores(df, language):
     for col in df.columns:
         if "confidence" in col.lower():
             df[col] = df[col].apply(
@@ -23,18 +23,19 @@ def preprocess_llm_scores(df):
             )
             df[col] = df[col].apply(convert_confidence)
 
-        if "structure_score" in col.lower():
-            df.loc[1:2, col] = df.loc[1:2, col].apply(
-                lambda x: x.split("\n\n")[-1].strip()
-            )
-            df[col] = df[col].astype(int)
+        if language == "English":
+            if "structure_score" in col.lower():
+                df.loc[1:2, col] = df.loc[1:2, col].apply(
+                    lambda x: x.split("\n\n")[-1].strip()
+                )
+                df[col] = df[col].astype(int)
 
-        if "dynamics_score" in col.lower():
-            df[col] = (
-                df[col.replace("Score", "Confidence")]
-                .apply(lambda x: extract_content_between_tags(x, "score"))
-                .astype(int)
-            )
+            if "dynamics_score" in col.lower():
+                df[col] = (
+                    df[col.replace("Score", "Confidence")]
+                    .apply(lambda x: extract_content_between_tags(x, "score"))
+                    .astype(int)
+                )
 
     return df
 

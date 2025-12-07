@@ -13,12 +13,12 @@ load_dotenv()
 
 
 def extract_content_between_tags(text, tag):
-    pattern = f"<{tag}>\s*([0-9]+%?)"
+    pattern = rf"<{tag}>\s*(.*?)\s*</{tag}>"
     match = re.search(pattern, text, re.DOTALL | re.IGNORECASE)
     if match:
         return match.group(1).strip()
     else:
-        print(f"Tag <{tag}> not found in the text.")
+        print(f"Tag <{tag}> not found in the text.\n")
         return text
 
 
@@ -35,7 +35,7 @@ def merge_data_files(data_dir, language):
 
     meetings_df = pd.DataFrame()
     for file in files:
-        df = pd.read_csv(file)
+        df = pd.read_csv(file, encoding="utf-8")
         filename = os.path.basename(file)
         base_name = os.path.splitext(filename)[0]
         meeting_type = base_name.split("_")[0]
@@ -47,18 +47,23 @@ def merge_data_files(data_dir, language):
 
 
 def initialize_model(
-    task="meeting_challenges_assess", meeting_language="English", from_local_model=False
+    task="meeting_challenges_assess",
+    meeting_language="English",
+    from_local_model=False,
+    max_tokens=1000,
 ):
     if from_local_model:
         model_name = "mistralai/Mistral-7B-Instruct-v0.3"
         model_init = LocalModel(
             model_name=model_name,
-            max_new_tokens=1000,
+            max_new_tokens=max_tokens,
         )
     else:
         client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         model_name = "llama-3.1-8b-instant"
-        model_init = ModelHandler(client=client, model_name=model_name, max_tokens=1000)
+        model_init = ModelHandler(
+            client=client, model_name=model_name, max_tokens=max_tokens
+        )
 
     save_dir = os.path.join("evaluation", f"{meeting_language}", f"{task}")
     os.makedirs(save_dir, exist_ok=True)

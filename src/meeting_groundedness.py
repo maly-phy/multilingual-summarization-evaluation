@@ -2,12 +2,7 @@ import os
 import pandas as pd
 from rouge_score import rouge_scorer
 from utils import merge_data_files
-
-task = "meeting_groundedness_assess"
-meeting_language = "English"
-save_dir = os.path.join("evaluation", f"{meeting_language}", f"{task}")
-os.makedirs(save_dir, exist_ok=True)
-save_path = os.path.join(save_dir, f"groundedness_eval.csv")
+from preprocess_corpus import Cleaner
 
 
 def measure_rouge_groundedness(article_text, meeting_text):
@@ -23,10 +18,9 @@ def measure_rouge_groundedness(article_text, meeting_text):
     return results
 
 
-def compute_meeting_groundedness(meeting_df):
+def compute_meeting_groundedness(meeting_df, save_path):
     all_results = []
     for idx, row in meeting_df.iterrows():
-        print(f"Processing {idx} / {len(meeting_df)}\n")
         article_text = row["Article"]
         meeting_text = row["Meeting"]
         scores = measure_rouge_groundedness(article_text, meeting_text)
@@ -48,6 +42,8 @@ def compute_meeting_groundedness(meeting_df):
                 "rougel_f1": scores["rougeL"]["f1"],
             }
         )
+        if idx % 50 == 0:
+            print(f"Processed {idx} / {len(meeting_df)} meetings...")
     results_df = pd.DataFrame(all_results)
     results_df.reset_index(drop=True, inplace=True)
     results_df.to_csv(save_path, index=False)
@@ -57,5 +53,11 @@ def compute_meeting_groundedness(meeting_df):
 
 
 if __name__ == "__main__":
-    eng_meetings_df = merge_data_files("data/fame_dataset", "English")
-    groundedness_results_df = compute_meeting_groundedness(eng_meetings_df)
+    task = "meeting_groundedness_eval"
+    meeting_language = "German"
+    save_dir = os.path.join("evaluation", f"{meeting_language}", f"{task}")
+    os.makedirs(save_dir, exist_ok=True)
+    save_path = os.path.join(save_dir, f"groundedness_eval.csv")
+
+    meetings_df = merge_data_files("data/fame_dataset", meeting_language)
+    groundedness_results_df = compute_meeting_groundedness(meetings_df, save_path)

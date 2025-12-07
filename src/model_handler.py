@@ -21,7 +21,7 @@ class ModelHandler:
         )
         return response
 
-    def call_model(self, system_prompt, user_prompt, max_attempts=6, base_delay=3.0):
+    def call_model(self, system_prompt, user_prompt, max_attempts=3, base_delay=3.0):
         messages = [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
