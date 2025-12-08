@@ -8,6 +8,7 @@ from groq import Groq
 from model_handler import ModelHandler
 from local_model import LocalModel
 from dotenv import load_dotenv
+import nltk
 
 load_dotenv()
 
@@ -70,3 +71,31 @@ def initialize_model(
     save_path = os.path.join(save_dir, f"{model_name.split('/')[-1]}_{task}.csv")
 
     return model_init, save_path
+
+
+def text_chunker(text, chunk_size=20):
+    words = text.split()
+    all_chunks = []
+    for i in range(0, len(words), chunk_size):
+        chunk = " ".join(words[i : i + chunk_size])
+        all_chunks.append(chunk)
+    results = "\n\n".join(all_chunks)
+    return results
+
+
+def truncate_text(text):
+    sents = nltk.sent_tokenize(text, language="german")
+    ending_puncts = (".", "!", "?")
+    filtered = [sent for sent in sents if sent.strip().endswith(ending_puncts)]
+    truncated_text = " ".join(filtered)
+    return truncated_text
+
+
+def save_summaries(task, language, file_path):
+    df = pd.read_csv(file_path)
+    df["Meeting"] = df["Meeting"].apply(text_chunker)
+
+    with open(f"evaluation/{language}/{task}/{task}.txt", "w", encoding="utf-8") as f:
+        for idx, row in df.iterrows():
+            f.write(f"\n\n***Meeting idx: {idx + 2}***\n\n")
+            f.write(f"Meeting Transcript:\n{row['Meeting']}\n\n\n")
