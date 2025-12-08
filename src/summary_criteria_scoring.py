@@ -1,14 +1,13 @@
 import pandas as pd
-import os
-import time
-from utils import (
-    merge_data_files,
-    extract_content_between_tags,
-    initialize_model,
-)
+import os, sys
+from groq import Groq
+from dotenv import load_dotenv
+from utils import extract_content_between_tags, initialize_model
+
+load_dotenv()
 
 
-class MeetingEvaluator:
+class SummaryScorer:
     def __init__(self, df, task, language, from_local_model, max_tokens):
         self.df = df
         self.task = task
@@ -16,18 +15,15 @@ class MeetingEvaluator:
         self.from_local_model = from_local_model
         self.max_tokens = max_tokens
         self.criteria = {
-            "Naturalness": f"How natural the conversation flows, like native {self.language} speakers (1-5)",
-            "Coherence": "How well the conversation maintains logical flow and connection (1-5)",
-            "Interesting": "How engaging and content-rich the conversation is (1-5)",
-            "Consistency": "How consistent each speaker's contributions are (1-5)",
+            "Naturalness": f"How natural the conversation flows, like native {self.language} speakers (1-5)"
         }
 
-    def basic_llm_evaluator(self, model_init, meeting_transcript):
-        basic_evaluation = {}
+    def summary_criteria_eval(self, model_init, model_summary):
+        criteria_eval = {}
         for criterion, description in self.criteria.items():
             system_prompt = (
-                f"You are an expert conversation analyst evaluating meeting transcripts (in {self.language}). "
-                f"Evaluate the following meeting transcript thoroughly for **{criterion}**: {description}. \n"
+                f"You are an expert linguist evaluating meeting summaries (in {self.language}). "
+                f"Evaluate the following meeting summary thoroughly for **{criterion}**: {description}. \n"
                 "- **Rating 1**: Highlights minimal or absent behaviour for each criterion.\n"
                 "- **Rating 5**: Showcases strong, explicit demonstration of the behaviour.\n"
                 f"Provide your step-by-step reasoning in only 1-2 sentences in {self.language}, a confidence score (0-100%), and a final score as a decimal number between 1.0 and 5.0, demonstrating the degree to which the chosen criterion is satisfied in {self.language} context. "
@@ -37,32 +33,31 @@ class MeetingEvaluator:
                 "<score>decimal number between 1.0 and 5.0</score> "
                 "You must NOT return any reasoning text with either the confidence score or the final score."
             )
-
-            user_prompt = f"Please evaluate this meeting transcript in {self.language} for {criterion}:\n\n{meeting_transcript}"
+            user_prompt = f"Please evaluate this meeting summary in {self.language} for {criterion}:\n\n{model_summary}"
 
             response = model_init.call_model(system_prompt, user_prompt)
             if not response:
                 print(f"No response for criterion {criterion}, breaking...\n")
                 break
 
-            basic_evaluation[criterion] = {
+            criteria_eval[criterion] = {
                 "base_reasoning": extract_content_between_tags(response, "reasoning"),
                 "base_confidence": extract_content_between_tags(response, "confidence"),
                 "base_score": extract_content_between_tags(response, "score"),
             }
 
         eval_results = {
-            "Meeting": meeting_transcript,
+            "model_summary": model_summary,
             **{
                 f"{criterion}_{key}": value
-                for criterion, res in basic_evaluation.items()
+                for criterion, res in criteria_eval.items()
                 for key, value in res.items()
             },
         }
 
         return eval_results
 
-    def process_meeting_evaluation(self):
+    def process_summary_scoring(self):
         df = self.df[:30]
         start_idx = df.index[0]
         end_idx = df.index[-1]
@@ -71,53 +66,47 @@ class MeetingEvaluator:
         )
 
         root_filename = os.path.basename(save_path).replace(".csv", "")
-        root_filename += f"_{start_idx}_{end_idx}.csv"
+        root_filename += f"_with_naturalness_{start_idx}_{end_idx}.csv"
         dir_name = os.path.dirname(save_path)
         save_path = os.path.join(dir_name, root_filename)
         print(f"save_path: {save_path}")
 
         all_results = []
-        start_loop = time.time()
-        for idx, row in df[start_idx:end_idx].iterrows():
-            meeting_transcript = row["Meeting"]
-            title = row["Title"]
-            basic_meeting_eval = self.basic_llm_evaluator(
-                model_init, meeting_transcript
-            )
+        for idx, row in df.iterrows():
+            model_summary = row["model_summary"]
+            eval_results = self.summary_criteria_eval(model_init, model_summary)
 
-            if not basic_meeting_eval:
+            if not eval_results:
                 print(f"No evaluation results for idx {idx}, continuing...\n")
                 continue
 
             if idx % 4 == 0:
-                print(f"Processing {idx} / {len(df)}\n")
-                for key, results in basic_meeting_eval.items():
-                    if key == "Meeting" or key == "Title":
+                print(f"\nProcessing {idx}/{len(df)}\n")
+                for key, results in eval_results.items():
+                    if key == "model_summary":
                         continue
                     print(f"{key}: {results}\n")
 
-            basic_meeting_eval["Title"] = title
-            all_results.append(basic_meeting_eval)
-
-        print(f"Loop time: {(time.time() - start_loop)/60:.2f} minutes\n")
+            all_results.append(eval_results)
 
         output_df = pd.DataFrame(all_results)
         output_df.to_csv(save_path, index=False)
-        print(f"Evaluation results saved to {save_path}")
+        print(f"Evaluation results saved to {save_path}\n")
 
 
 if __name__ == "__main__":
     language = "German"
-    task = "basic_meeting_eval"
-    max_tokens = 512
+    task = "summary_eval"
+    max_tokens = 256
     from_local_model = False
+    df_path = f"evaluation/{language}/{task}/llama-3.1-8b-instant_{task}_0_29.csv"
+    df = pd.read_csv(df_path)
 
-    meetings_df = merge_data_files("data/fame_dataset", language)
-    meeting_evaluator = MeetingEvaluator(
-        meetings_df,
+    summary_scorer = SummaryScorer(
+        df,
         task,
         language,
         from_local_model,
         max_tokens,
     )
-    meeting_evaluator.process_meeting_evaluation()
+    summary_scorer.process_summary_scoring()
