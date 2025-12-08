@@ -15,7 +15,7 @@ def report_df(file_path, language):
 
     print(df.shape, "\n")
     print(df.columns, "\n")
-    print(df.head(), "\n")
+    print(df.head(2), "\n")
     print(df.info(), "\n")
     print(df.select_dtypes(include=["number"]).columns, "\n")
     return df
@@ -53,11 +53,7 @@ def append_scores_to_file(file_path, agg_df):
 if __name__ == "__main__":
     task = "summary_eval"
     language = "English"
-    file_path = (
-        f"evaluation/{language}/summary_eval/llama-3.1-8b-instant_{task}_with_LAR.csv"
-    )
+    file_path = f"evaluation/{language}/summary_eval/llama-3.1-8b-instant_{task}_with_naturalness_0_29.csv"
     scores_file = f"evaluation/{language}/summary_eval/agg_scores.txt"
     df = pd.read_csv(file_path)
-    df["LAR_mean"] = df["LAR"].mean()
-    df["LAR_std"] = df["LAR"].std()
-    append_scores_to_file(scores_file, df[["LAR_mean", "LAR_std"]])
+    report_df(file_path, language)

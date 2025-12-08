@@ -92,6 +92,11 @@ class SummaryEvaluator:
                 break
 
             candidate_summary = extract_content_between_tags(response, "summary")
+            candidate_summary = (
+                candidate_summary.replace("<summary>", "")
+                .replace("</summary>", "")
+                .strip()
+            )
             summary_for_this_sample = {model_name: candidate_summary}
 
             eval_results = self.evaluate_summaries(
@@ -117,7 +122,7 @@ class SummaryEvaluator:
 
 if __name__ == "__main__":
     language = "German"
-    max_tokens = 310
+    max_tokens = 365  # 310 for English
     model_name = "llama-3.1-8b-instant"
     task = "summary_eval"
     from_local_model = False
