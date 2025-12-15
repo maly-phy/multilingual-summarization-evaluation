@@ -5,8 +5,8 @@ import evaluate
 import nltk
 from nltk.translate import meteor
 from nltk import word_tokenize
-import sys, os
 import torch
+import sys, os
 import pandas as pd
 from bleurt import score
 
@@ -47,26 +47,48 @@ class NLPMetricEvaluator:
         self.ldfacts = LongDocFACTScore(self.device, self.language)
         self.bart = BARTScore(self.device, self.language)
         self.bleurt = score.BleurtScorer(bleurt_ckpt)
-        self.blanc_help = BlancHelp(
-            device=self.device, inference_batch_size=128, show_progress_bar=False
-        )
-        self.blanc_tune = BlancTune(
-            device=self.device,
-            inference_batch_size=24,
-            finetune_mask_evenly=False,
-            finetune_batch_size=24,
-            show_progress_bar=False,
-        )
-        self.lens_path = download_model("davidheineman/lens")
-        self.lens = LENS(self.lens_path, rescale=True)
-        self.estime = Estime(device=self.device, output=["alarms", "soft", "coherence"])
         if self.language == "German":
-            path_mdl_raw = "bert-base-german-cased"  #'bert-base-multilingual-cased'
             self.estime = Estime(
                 device=self.device,
                 output=["alarms", "soft", "coherence"],
-                path_mdl_raw=path_mdl_raw,
+                path_mdl_raw="bert-base-german-cased",  #'bert-base-multilingual-cased'
             )
+            self.blanc_help = BlancHelp(
+                model_name="bert-base-german-cased",
+                device=self.device,
+                inference_batch_size=64,
+                show_progress_bar=False,
+            )
+            self.blanc_tune = BlancTune(
+                model_name="bert-base-german-cased",
+                device=self.device,
+                inference_batch_size=24,
+                finetune_mask_evenly=False,
+                finetune_batch_size=24,
+                show_progress_bar=False,
+            )
+
+        else:
+            self.blanc_help = BlancHelp(
+                device=self.device, inference_batch_size=64, show_progress_bar=False
+            )
+            self.blanc_tune = BlancTune(
+                device=self.device,
+                inference_batch_size=24,
+                finetune_mask_evenly=False,
+                finetune_batch_size=24,
+                show_progress_bar=False,
+            )
+            self.estime = Estime(
+                device=self.device, output=["alarms", "soft", "coherence"]
+            )
+
+        self.lens_path = download_model("davidheineman/lens")  # not yet multilingual
+        self.lens = LENS(self.lens_path, rescale=True)
+
+    def compute_bleurt(self, ref, pred):
+        bleurt_score = self.bleurt.score(references=ref, candidates=pred, batch_size=4)
+        return bleurt_score
 
     def compute_questeval(self, src, pred, ref):
         results = self.questeval.corpus_questeval(
@@ -84,9 +106,7 @@ class NLPMetricEvaluator:
 
     def compute_bleu(self, ref, pred):
         bleu = evaluate.load("bleu")
-        bleu_score = bleu.compute(
-            tokenize="spBLEU-1K", predictions=pred, references=ref
-        )
+        bleu_score = bleu.compute(predictions=pred, references=ref)
         return bleu_score["bleu"]
 
     def compute_sacrebleu(self, pred, ref):
@@ -96,22 +116,14 @@ class NLPMetricEvaluator:
         )
         return sacrebleu_score["score"]
 
-    def compute_bleurt(self, ref, pred):
-        bleurt_score = self.bleurt.score(references=ref, candidates=pred, batch_size=4)
-        return bleurt_score
-
     def compute_chrf(self, ref, pred):
         chrf = evaluate.load("chrf")
-        chrf_score = chrf.compute(
-            tokenize="spBLEU-1K", predictions=pred, references=ref
-        )
+        chrf_score = chrf.compute(predictions=pred, references=ref)
         return chrf_score["score"]
 
     def compute_perplexity(self, pred):
         perplexity = evaluate.load("perplexity")
-        perplexity_score = perplexity.compute(
-            tokenize="spBLEU-1K", predictions=pred, model_id="gpt2"
-        )
+        perplexity_score = perplexity.compute(predictions=pred, model_id="gpt2")
         return perplexity_score["perplexities"]
 
     def compute_bart(self, ref, pred):
@@ -154,7 +166,7 @@ class NLPMetricEvaluator:
             if idx % 5 == 0:
                 print(f"Processing {idx} / {len(df)}\n")
 
-            if metric_type == "bleurt":
+            if self.metric_type == "bleurt":
                 bleurt_score = self.compute_bleurt(ref, pred)
                 results.append(
                     {
@@ -167,41 +179,42 @@ class NLPMetricEvaluator:
                 bleu_score = self.compute_bleu(ref, pred)
                 chrf_score = self.compute_chrf(ref, pred)
                 perplexity_score = self.compute_perplexity(pred)
-                results.append(
-                    {
-                        "meteor_score": round(meteor_score[0], 3),
-                        "bleu_score": round(bleu_score, 3),
-                        "chrf_score": round(chrf_score, 3),
-                        "perplexity_score": round(perplexity_score[0], 3),
-                    }
-                )
-
-            elif self.metric_type == "bart_ldfacts":
-                bart_score = self.compute_bart(ref, pred)
-                ldfact_score = self.compute_ldfacts(src, pred)
-                results.append(
-                    {
-                        "bart_score": round(bart_score[0], 3),
-                        "ldfact_score": round(ldfact_score[0], 3),
-                    }
-                )
-
-            elif self.metric_type == "questeval":
-                questeval_score = self.compute_questeval(src, pred, ref)
+                sacrebleu_score = self.compute_sacrebleu(pred, ref)
                 results.append(
                     {
                         "Meeting": row["Meeting"],
                         "model_summary": row["model_summary"],
                         "ref_summary": row["ref_summary"],
+                        "meteor_score": round(meteor_score[0], 3),
+                        "bleu_score": round(bleu_score, 3),
+                        "chrf_score": round(chrf_score, 3),
+                        "perplexity_score": round(perplexity_score[0], 3),
+                        "sacrebleu_score": round(sacrebleu_score, 3),
+                    }
+                )
+
+            elif self.metric_type == "bart_ldfacts_questeval":
+                bart_score = self.compute_bart(ref, pred)
+                ldfact_score = self.compute_ldfacts(src, pred)
+                questeval_score = self.compute_questeval(src, pred, ref)
+                results.append(
+                    {
+                        "bart_score": round(bart_score[0], 3),
+                        "ldfact_score": round(ldfact_score[0], 3),
                         "questeval_score": round(questeval_score[0], 3),
                     }
                 )
-            elif self.metric_type == "blanc":
+
+            elif self.metric_type == "blanc_estim":
                 blank_help_score, blank_tune_score = self.compute_blanc(src[0], pred[0])
+                estime_score = self.compute_estime(src[0], pred)
                 results.append(
                     {
                         "blanc_help_score": round(blank_help_score, 3),
                         "blanc_tune_score": round(blank_tune_score, 3),
+                        "estime_alarms": round(estime_score[0][0], 3),
+                        "estime_soft": round(estime_score[0][1], 3),
+                        "estime_coherence": round(estime_score[0][2], 3),
                     }
                 )
 
@@ -210,18 +223,6 @@ class NLPMetricEvaluator:
                 results.append(
                     {
                         "lens_score": round(lens_score, 3),
-                    }
-                )
-
-            elif self.metric_type == "sacrebleu_estime":
-                sacrebleu_score = self.compute_sacrebleu(pred, ref)
-                estime_score = self.compute_estime(src[0], pred)
-                results.append(
-                    {
-                        "sacrebleu_score": round(sacrebleu_score, 3),
-                        "estime_alarms": round(estime_score[0][0], 3),
-                        "estime_soft": round(estime_score[0][1], 3),
-                        "estime_coherence": round(estime_score[0][2], 3),
                     }
                 )
 
@@ -234,10 +235,10 @@ class NLPMetricEvaluator:
 
 
 if __name__ == "__main__":
-    language = "English"
+    language = "German"
     task = "nlp_eval"
-    device = torch.device("cuda")
-    metric_type = "questeval"
+    device = "cuda"  # torch.device("cuda")
+    metric_type = "bleurt"
 
     save_dir = f"evaluation/{language}/{task}"
     os.makedirs(save_dir, exist_ok=True)
