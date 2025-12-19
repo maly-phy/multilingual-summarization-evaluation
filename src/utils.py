@@ -1,14 +1,16 @@
-import os
+import os, sys
 import re, ast
 import gc
 import torch
 import glob
 import pandas as pd
 from groq import Groq
-from src.model_handler import ModelHandler
-from src.local_model import LocalModel
 from dotenv import load_dotenv
 import nltk
+
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.model_handler import ModelHandler
+from src.local_model import LocalModel
 
 load_dotenv()
 

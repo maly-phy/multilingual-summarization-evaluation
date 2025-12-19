@@ -3,7 +3,8 @@ from nltk import sent_tokenize
 from groq import Groq
 from dotenv import load_dotenv
 import os, json
-from sentence_transformers import SentenceTransformer
+
+# from sentence_transformers import SentenceTransformer
 import re
 
 load_dotenv()
@@ -15,13 +16,13 @@ extra_sent1 = (
 extra_sent2 = "Here's the breakdown of the meeting transcript into single facts:\n\n"
 
 
-def atomic_facts_from_meeting(df):
+def atomic_facts_from_meeting(df, language):
     system_prompt = "You are an expert text analyzer."
     results = {}
     for idx, row in df[:30].iterrows():
         meeting = row["Meeting"]
         user_prompt = (
-            f"Please breakdown the following meeting transcript into single facts:\n\n{meeting}\n\n"
+            f"Please breakdown the following meeting transcript in {language} into single facts:\n\n{meeting}\n\n"
             f"Please consider all factual information presented in the transcript.\n"
             f"Do not repeat the same fact.\n"
             f"Provide the facts as a numbered list."
@@ -54,7 +55,7 @@ def atomic_facts_from_meeting(df):
     return results
 
 
-def generate_factual_summary(df):
+def generate_factual_summary(df, language):
     system_prompt = "You are an expert meeting summarizer."
     with open("outputs/atomic_facts/atomic_facts.json", "r", encoding="utf-8") as f:
         atomic_facts = json.load(f)
@@ -65,7 +66,7 @@ def generate_factual_summary(df):
         facts = atomic_facts.get(str(idx), "")
         facts = facts.replace(extra_sent2, "").strip()
         user_prompt = (
-            f"You will be given a meeting transcript and atomic facts extracted from it. Please follow these steps carefully to generate a summary:\n\n"
+            f"You will be given a meeting transcript and atomic facts extracted from it in {language} language. Please follow these steps carefully to generate a summary in {language}:\n\n"
             f"- First read the meeting transcript thoroughly to get familiar with the topic.\n"
             f"- Then review the list of atomic facts to identify the key points discussed in the meeting.\n"
             f"Now, generate a concise and accurate summary that captures the main ideas and important details from both the transcript and the atomic facts.\n\n"
@@ -105,7 +106,7 @@ def generate_factual_summary(df):
     return output_df
 
 
-def review_and_correct_summary(df):
+def review_and_correct_summary(df, language):
     system_prompt = "You are an expert summary corrector."
 
     with open("outputs/atomic_facts/atomic_facts.json", "r", encoding="utf-8") as f:
@@ -116,7 +117,7 @@ def review_and_correct_summary(df):
         ref_summary = row["ref_summary"]
         facts = atomic_facts.get(str(idx), "")
         user_prompt = (
-            f"You will be given a summary and atomic facts extracted from the original knowledge source of the summary. Please follow these steps carefully to review and correct the summary based on the provided facts:\n\n"
+            f"You will be given a summary and atomic facts extracted from the original knowledge source of the summary in {language} language. Please follow these steps carefully to review and correct the summary based on the provided facts:\n\n"
             f"- First read the summary thoroughly to get familiar with its content.\n"
             f"- Then review the list of atomic facts to identify any discrepancies or inaccuracies in the summary.\n"
             f"Now, read the summary again and check for any factual inaccuracies or discrepancies based on the provided atomic facts following these guidelines:\n\n"
@@ -165,15 +166,15 @@ def review_and_correct_summary(df):
     return output_df
 
 
-def break_and_review_summary(df):
-    encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-    all_sents = []
-    for idx, row in df[:5].iterrows():
-        ref_summary = row["ref_summary"]
-        sents = sent_tokenize(ref_summary)
-        all_sents.append(sents)
-        for i, sents in enumerate(all_sents):
-            pass
+# def break_and_review_summary(df):
+#     encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
+#     all_sents = []
+#     for idx, row in df[:5].iterrows():
+#         ref_summary = row["ref_summary"]
+#         sents = sent_tokenize(ref_summary)
+#         all_sents.append(sents)
+#         for i, sents in enumerate(all_sents):
+#             pass
 
 
 def convert_facts_into_text(file_path):
@@ -197,16 +198,15 @@ def convert_facts_into_text(file_path):
 
 
 if __name__ == "__main__":
-    language = "English"
+    language = "German"
     task = "summary_eval"
-    src_path = f"evaluation/{language}/{task}/llama-3.1-8b-instant_{task}.csv"
+    src_path = f"evaluation/{language}/{task}/llama-3.1-8b-instant_{task}_0_29.csv"
     target_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
-    file_path = f"evaluation/{language}/atomic_facts/atomic_facts.json"
-    facts = convert_facts_into_text(file_path)
-    print(len(facts), "\n")
-    print([f[:50] for f in facts[:2]], "\n")
-
-    # atomic_facts = atomic_facts_from_meeting(df)
+    facts_path = f"evaluation/{language}/atomic_facts/atomic_facts.json"
+    # facts = convert_facts_into_text(facts_path)
+    df = pd.read_csv(src_path)
+    print(df["Meeting"].iloc[29], "\n")
+    # atomic_facts = atomic_facts_from_meeting(df, language)
     # factual_summary_df = generate_factual_summary(df)
     # corr_summ = review_and_correct_summary(df)
     # all_facts = convert_text_into_sents()

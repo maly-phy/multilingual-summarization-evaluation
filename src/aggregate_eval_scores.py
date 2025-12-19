@@ -15,7 +15,7 @@ def report_df(file_path, language):
 
     print(df.shape, "\n")
     print(df.columns, "\n")
-    print(df.head(2), "\n")
+    # print(df.head(2), "\n")
     print(df.info(), "\n")
     print(df.select_dtypes(include=["number"]).columns, "\n")
     return df
@@ -50,10 +50,31 @@ def append_scores_to_file(file_path, agg_df):
             f.write(f"{k}: {v[0]}\n\n")
 
 
+def process_files(language, global_task, tasks):
+    scores_file = f"evaluation/{language}/{global_task}/agg_scores.txt"
+    all_dfs = []
+    for task in tasks:
+        file_path = f"evaluation/{language}/{global_task}/{task}_eval_0_29.csv"
+        agg_df = aggregate_scores(file_path, language)
+        all_dfs.append(agg_df)
+        append_scores_to_file(scores_file, agg_df)
+
+    combined_df = pd.concat(all_dfs, axis=1, ignore_index=False)
+    combined_df.to_csv(f"evaluation/{language}/{global_task}/combined_eval.csv")
+
+
 if __name__ == "__main__":
-    task = "summary_eval"
+    tasks = [
+        "semantic",
+        "blanc_estim",
+        "bleurt",
+        "hf",
+        "lens",
+    ]
     language = "English"
-    file_path = f"evaluation/{language}/summary_eval/llama-3.1-8b-instant_{task}_with_naturalness_0_29.csv"
-    scores_file = f"evaluation/{language}/summary_eval/agg_scores.txt"
-    df = pd.read_csv(file_path)
-    report_df(file_path, language)
+    global_task = "nlp_eval_facts"
+    file_path = f"evaluation/{language}/{global_task}/{tasks}_eval_0_29.csv"
+    scores_file = f"evaluation/{language}/{global_task}/agg_scores.txt"
+    # df = pd.read_csv(file_path)
+    # report_df(file_path, language)
+    process_files(language, global_task, tasks)
