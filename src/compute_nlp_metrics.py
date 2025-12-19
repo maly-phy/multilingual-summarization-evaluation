@@ -8,6 +8,9 @@ import torch
 import sys, os
 import pandas as pd
 from bleurt import score
+from rouge_score import rouge_scorer
+from bert_score import score as bert_score
+from fact_score import convert_facts_into_text
 
 sys.path.append(os.getcwd())
 from submodules.QuestEval.questeval.questeval_metric import QuestEval
@@ -45,46 +48,71 @@ class NLPMetricEvaluator:
         self.questeval = QuestEval(no_cuda=False, language="en")  # not yet multilingual
         self.ldfacts = LongDocFACTScore(self.device, self.language)
         self.bart = BARTScore(self.device, self.language)
-        self.bleurt = score.BleurtScorer(bleurt_ckpt)
+        # self.bleurt = score.BleurtScorer(bleurt_ckpt)
 
-        if self.language == "German":
-            self.estime = Estime(
-                device=self.device,
-                output=["alarms", "soft", "coherence"],
-                path_mdl_raw="bert-base-german-cased",  #'bert-base-multilingual-cased'
-            )
-            self.blanc_help = BlancHelp(
-                model_name="bert-base-german-cased",
-                device=self.device,
-                inference_batch_size=64,
-                show_progress_bar=False,
-            )
-            self.blanc_tune = BlancTune(
-                model_name="bert-base-german-cased",
-                device=self.device,
-                inference_batch_size=24,
-                finetune_mask_evenly=False,
-                finetune_batch_size=24,
-                show_progress_bar=False,
-            )
+        # self.estime = Estime(
+        #     device=self.device,
+        #     output=["alarms", "soft", "coherence"],
+        #     path_mdl_raw=(
+        #         "bert-base-german-cased"
+        #         if self.language == "German"
+        #         else "bert-base-uncased"
+        #     ),  #'bert-base-multilingual-cased'
+        # )
+        # self.blanc_help = BlancHelp(
+        #     model_name=(
+        #         "bert-base-german-cased"
+        #         if self.language == "German"
+        #         else "bert-base-uncased"
+        #     ),
+        #     device=self.device,
+        #     inference_batch_size=64,
+        #     show_progress_bar=False,
+        # )
+        # self.blanc_tune = BlancTune(
+        #     model_name=(
+        #         "bert-base-german-cased"
+        #         if self.language == "German"
+        #         else "bert-base-uncased"
+        #     ),
+        #     device=self.device,
+        #     inference_batch_size=24,
+        #     finetune_mask_evenly=False,
+        #     finetune_batch_size=24,
+        #     show_progress_bar=False,
+        # )
 
-        else:
-            self.blanc_help = BlancHelp(
-                device=self.device, inference_batch_size=64, show_progress_bar=False
-            )
-            self.blanc_tune = BlancTune(
-                device=self.device,
-                inference_batch_size=24,
-                finetune_mask_evenly=False,
-                finetune_batch_size=24,
-                show_progress_bar=False,
-            )
-            self.estime = Estime(
-                device=self.device, output=["alarms", "soft", "coherence"]
-            )
+        # self.lens_path = download_model("davidheineman/lens")  # not yet multilingual
+        # self.lens = LENS(self.lens_path, rescale=True)
 
-        self.lens_path = download_model("davidheineman/lens")  # not yet multilingual
-        self.lens = LENS(self.lens_path, rescale=True)
+    def compute_lar(self, ref, pred):
+        lar_metric = 1 - abs(len(ref) - len(pred)) / len(ref)
+        return max(0.0, lar_metric)
+
+    def compute_rouge(self, ref, pred):
+        rouge = rouge_scorer.RougeScorer(
+            ["rouge1", "rouge2", "rougeLsum"], use_stemmer=True
+        )
+        rouge_scores = rouge.score(ref, pred)
+        return rouge_scores
+
+    def compute_bert(self, ref, pred):
+        P, R, F1 = bert_score(
+            cands=pred,
+            refs=ref,
+            model_type=(
+                "bert-base-uncased"
+                if self.language == "English"
+                else "google-bert/bert-base-german-cased"
+            ),
+            lang="en" if self.language == "English" else "de",
+            verbose=False,
+            idf=False,
+            batch_size=4,
+            device=self.device,
+            num_layers=12 if self.language == "German" else None,
+        )
+        return P, R, F1
 
     def compute_bleurt(self, ref, pred):
         bleurt_score = self.bleurt.score(references=ref, candidates=pred, batch_size=4)
@@ -153,15 +181,15 @@ class NLPMetricEvaluator:
         )
         return lens_score[0]
 
-    def process_nlp_evaluation(self):
+    def process_nlp_evaluation(self, facts):
         df = self.df[:30]
         start_idx = df.index[0]
         end_idx = df.index[-1]
         results = []
         for idx, row in df.iterrows():
-            src = [row["Meeting"]]
-            pred = [row["model_summary"]]
-            ref = [row["ref_summary"]]
+            src = [facts[idx]]
+            pred = [row["model_factual_summary"]]
+            ref = [row["corrected_summary"]]
 
             if idx % 5 == 0:
                 print(f"Processing {idx} / {len(df)}\n")
@@ -175,6 +203,8 @@ class NLPMetricEvaluator:
                 )
 
             elif self.metric_type == "hf":
+                rouge_score = self.compute_rouge(ref[0], pred[0])
+                lar_score = self.compute_lar(ref[0], pred[0])
                 meteor_score = self.compute_meteor(ref, pred)
                 bleu_score = self.compute_bleu(ref, pred)
                 chrf_score = self.compute_chrf(ref, pred)
@@ -190,10 +220,23 @@ class NLPMetricEvaluator:
                         "chrf_score": round(chrf_score, 3),
                         "perplexity_score": round(perplexity_score[0], 3),
                         "sacrebleu_score": round(sacrebleu_score, 3),
+                        "lar_score": round(lar_score, 3),
+                        "rouge1_precision": round(rouge_score["rouge1"].precision, 3),
+                        "rouge1_recall": round(rouge_score["rouge1"].recall, 3),
+                        "rouge1_f1": round(rouge_score["rouge1"].fmeasure, 3),
+                        "rouge2_precision": round(rouge_score["rouge2"].precision, 3),
+                        "rouge2_recall": round(rouge_score["rouge2"].recall, 3),
+                        "rouge2_f1": round(rouge_score["rouge2"].fmeasure, 3),
+                        "rougeL_precision": round(
+                            rouge_score["rougeLsum"].precision, 3
+                        ),
+                        "rouge_recall": round(rouge_score["rougeLsum"].recall, 3),
+                        "rougeL_f1": round(rouge_score["rougeLsum"].fmeasure, 3),
                     }
                 )
 
-            elif self.metric_type == "bart_ldfacts_questeval":
+            elif self.metric_type == "semantic":
+                bert_score = self.compute_bert(ref, pred)
                 bart_score = self.compute_bart(ref, pred)
                 ldfact_score = self.compute_ldfacts(src, pred)
                 questeval_score = self.compute_questeval(src, pred, ref)
@@ -202,6 +245,9 @@ class NLPMetricEvaluator:
                         "bart_score": round(bart_score[0], 3),
                         "ldfact_score": round(ldfact_score[0], 3),
                         "questeval_score": round(questeval_score[0], 3),
+                        "bert_p": round(bert_score[0][0].item(), 3),
+                        "bert_r": round(bert_score[1][0].item(), 3),
+                        "bert_f1": round(bert_score[2][0].item(), 3),
                     }
                 )
 
@@ -235,17 +281,17 @@ class NLPMetricEvaluator:
 
 
 if __name__ == "__main__":
-    language = "German"
-    task = "nlp_eval"
-    device = "cuda"  # torch.device("cuda")
-    metric_type = "bleurt"
-
+    language = "English"
+    task = "nlp_eval_facts"
+    device = torch.device("cuda")
+    metric_type = "semantic"
     save_dir = f"evaluation/{language}/{task}"
     os.makedirs(save_dir, exist_ok=True)
     save_path = f"{save_dir}/{metric_type}_eval.csv"
-    input_path = (
-        f"evaluation/{language}/summary_eval/llama-3.1-8b-instant_summary_eval_0_29.csv"
-    )
+    input_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
+    facts_path = f"evaluation/{language}/atomic_facts/atomic_facts.json"
+
     df = pd.read_csv(input_path, encoding="utf-8")
     nlp_evalator = NLPMetricEvaluator(df, language, device, metric_type, save_path)
-    output_df = nlp_evalator.process_nlp_evaluation()
+    facts = convert_facts_into_text(facts_path)
+    output_df = nlp_evalator.process_nlp_evaluation(facts)
