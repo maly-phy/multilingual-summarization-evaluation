@@ -5,8 +5,8 @@ import torch
 import glob
 import pandas as pd
 from groq import Groq
-from model_handler import ModelHandler
-from local_model import LocalModel
+from src.model_handler import ModelHandler
+from src.local_model import LocalModel
 from dotenv import load_dotenv
 import nltk
 
