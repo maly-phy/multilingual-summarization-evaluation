@@ -75,7 +75,7 @@ def initialize_model(
     return model_init, save_path
 
 
-def text_chunker(text, chunk_size=20):
+def text_chunker(text, chunk_size=15):  # 20 for ENG
     words = text.split()
     all_chunks = []
     for i in range(0, len(words), chunk_size):

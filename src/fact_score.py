@@ -10,19 +10,24 @@ import re
 load_dotenv()
 
 client = Groq(api_key=os.getenv("GROQ_API_KEY"))
-extra_sent1 = (
+extra_sent1_eng = (
     "Here's the list of single facts extracted from the meeting transcript:\n\n"
 )
-extra_sent2 = "Here's the breakdown of the meeting transcript into single facts:\n\n"
+extra_sent2_eng = (
+    "Here's the breakdown of the meeting transcript into single facts:\n\n"
+)
+extra_sent1_de = "Hier sind die Fakten aus dem Meeting-Transkript:\n\n"
+extra_sent2_de = "Hier sind die Fakten, die ich aus dem Meeting-Transkript in deutscher Sprache ableite:\n\n"
 
 
-def atomic_facts_from_meeting(df, language):
+def atomic_facts_from_meeting(df, language, save_path):
     system_prompt = "You are an expert text analyzer."
     results = {}
     for idx, row in df[:30].iterrows():
         meeting = row["Meeting"]
         user_prompt = (
             f"Please breakdown the following meeting transcript in {language} into single facts:\n\n{meeting}\n\n"
+            f"You must keep the language of the facts as {language}.\n"
             f"Please consider all factual information presented in the transcript.\n"
             f"Do not repeat the same fact.\n"
             f"Provide the facts as a numbered list."
@@ -44,32 +49,33 @@ def atomic_facts_from_meeting(df, language):
             n=1,
         )
         output = response.choices[0].message.content
-        results[idx] = output.replace(extra_sent1, "").replace(extra_sent2, "").strip()
+        results[idx] = (
+            output.replace(extra_sent1_de, "").replace(extra_sent2_de, "").strip()
+        )
 
-    save_dir = "outputs/atomic_facts"
-    os.makedirs(save_dir, exist_ok=True)
-    with open(f"{save_dir}/atomic_facts.json", "w", encoding="utf-8") as f:
+    os.makedirs(save_path, exist_ok=True)
+    with open(f"{save_path}/atomic_facts.json", "w", encoding="utf-8") as f:
         json.dump(results, f, indent=4, ensure_ascii=False)
 
-    print(f"Atomic facts saved to {save_dir}/atomic_facts.json\n")
+    print(f"Atomic facts saved to {save_path}/atomic_facts.json\n")
     return results
 
 
-def generate_factual_summary(df, language):
+def generate_factual_summary(df, language, facts_path):
     system_prompt = "You are an expert meeting summarizer."
-    with open("outputs/atomic_facts/atomic_facts.json", "r", encoding="utf-8") as f:
+    with open(f"{facts_path}/atomic_facts.json", "r", encoding="utf-8") as f:
         atomic_facts = json.load(f)
 
     results = []
     for idx, row in df[:30].iterrows():
         meeting = row["Meeting"]
         facts = atomic_facts.get(str(idx), "")
-        facts = facts.replace(extra_sent2, "").strip()
+        facts = facts.replace(extra_sent1_de, "").replace(extra_sent2_de, "").strip()
         user_prompt = (
             f"You will be given a meeting transcript and atomic facts extracted from it in {language} language. Please follow these steps carefully to generate a summary in {language}:\n\n"
             f"- First read the meeting transcript thoroughly to get familiar with the topic.\n"
             f"- Then review the list of atomic facts to identify the key points discussed in the meeting.\n"
-            f"Now, generate a concise and accurate summary that captures the main ideas and important details from both the transcript and the atomic facts.\n\n"
+            f"Now, generate a concise and accurate summary in {language} that captures the main ideas and important details from both the transcript and the atomic facts.\n\n"
             f"Meeting transcript:\n{meeting}\n\n"
             f"Atomic Facts:\n{facts}\n\n"
             f"Please output just the summary text (complete; without bullet points) within <summary> </summary> tags and no additional text. The summary must be **strictly under 300 words**."
@@ -89,10 +95,11 @@ def generate_factual_summary(df, language):
             stop=None,
             n=1,
         )
-        output = response.choices[0].message.content.strip()
+        output = response.choices[0].message.content
         summary = output.replace("<summary>", "").replace("</summary>", "").strip()
         results.append(
             {
+                "Meeting": row["Meeting"],
                 "model_factual_summary": summary,
                 "model_summary": row["model_summary"],
                 "ref_summary": row["ref_summary"],
@@ -100,18 +107,18 @@ def generate_factual_summary(df, language):
         )
 
     output_df = pd.DataFrame(results)
-    save_dir = "outputs/atomic_facts"
-    output_df.to_csv(f"{save_dir}/fact_based_summaries.csv", index=False)
-    print(f"Fact-based summaries saved to {save_dir}/fact_based_summaries.csv\n")
+    output_df.to_csv(f"{facts_path}/fact_based_summaries.csv", index=False)
+    print(f"Fact-based summaries saved to {facts_path}/fact_based_summaries.csv\n")
     return output_df
 
 
-def review_and_correct_summary(df, language):
+def review_and_correct_summary(language, facts_path):
     system_prompt = "You are an expert summary corrector."
 
-    with open("outputs/atomic_facts/atomic_facts.json", "r", encoding="utf-8") as f:
+    with open(f"{facts_path}/atomic_facts.json", "r", encoding="utf-8") as f:
         atomic_facts = json.load(f)
 
+    df = pd.read_csv(f"{facts_path}/fact_based_summaries.csv")
     results = []
     for idx, row in df[:30].iterrows():
         ref_summary = row["ref_summary"]
@@ -123,7 +130,8 @@ def review_and_correct_summary(df, language):
             f"Now, read the summary again and check for any factual inaccuracies or discrepancies based on the provided atomic facts following these guidelines:\n\n"
             f"- If you find any information in the summary that contradicts the atomic facts, please correct it based on the facts.\n"
             f"- If you find information in the summary that is not supported by any of the atomic facts, please remove them from the summary.\n"
-            f"- Do not correct the summary based on your own knowledge, always rely on the provided atomic facts.\n\n"
+            f"- Do not correct the summary based on your own knowledge, always rely on the provided atomic facts.\n"
+            f"- Always keep the language of the corrected summary as {language}.\n\n"
             f"Original Summary:\n{ref_summary}\n\n"
             f"Atomic Facts:\n{facts}\n\n"
             f"Please output just the corrected summary text (complete; without bullet points) within <corrected_summary> </corrected_summary> tags and no additional text. The corrected summary must be **strictly under 300 words**."
@@ -143,7 +151,7 @@ def review_and_correct_summary(df, language):
             stop=None,
             n=1,
         )
-        output = response.choices[0].message.content.strip()
+        output = response.choices[0].message.content
         corrected_summary = (
             output.replace("<corrected_summary>", "")
             .replace("</corrected_summary>", "")
@@ -159,9 +167,8 @@ def review_and_correct_summary(df, language):
         )
 
     output_df = pd.DataFrame(results)
-    save_dir = "outputs/atomic_facts"
-    output_df.to_csv(f"{save_dir}/corrected_summary.csv", index=False)
-    print(f"Corrected summaries saved to {save_dir}/corrected_summary.csv")
+    output_df.to_csv(f"{facts_path}/corrected_summary.csv", index=False)
+    print(f"Corrected summaries saved to {facts_path}/corrected_summary.csv")
 
     return output_df
 
@@ -201,14 +208,12 @@ if __name__ == "__main__":
     language = "German"
     task = "summary_eval"
     src_path = f"evaluation/{language}/{task}/llama-3.1-8b-instant_{task}_0_29.csv"
-    target_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
-    facts_path = f"evaluation/{language}/atomic_facts/atomic_facts.json"
+    facts_path = f"evaluation/{language}/atomic_facts"
     # facts = convert_facts_into_text(facts_path)
-    df = pd.read_csv(src_path)
-    print(df["Meeting"].iloc[29], "\n")
-    # atomic_facts = atomic_facts_from_meeting(df, language)
-    # factual_summary_df = generate_factual_summary(df)
-    # corr_summ = review_and_correct_summary(df)
+    # df = pd.read_csv(src_path)
+    # atomic_facts = atomic_facts_from_meeting(df, language, facts_path)
+    # factual_summary_df = generate_factual_summary(df, language, facts_path)
+    # corr_summ = review_and_correct_summary(language, facts_path)
     # all_facts = convert_text_into_sents()
     # print(len(all_facts), "\n")
     # print(all_facts[:2], "\n")

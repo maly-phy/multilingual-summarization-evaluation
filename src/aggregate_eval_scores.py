@@ -71,7 +71,7 @@ if __name__ == "__main__":
         "hf",
         "lens",
     ]
-    language = "English"
+    language = "German"
     global_task = "nlp_eval_facts"
     file_path = f"evaluation/{language}/{global_task}/{tasks}_eval_0_29.csv"
     scores_file = f"evaluation/{language}/{global_task}/agg_scores.txt"

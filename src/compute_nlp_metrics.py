@@ -4,15 +4,16 @@ warnings.filterwarnings("ignore")
 import evaluate
 from nltk.translate import meteor
 from nltk import word_tokenize
-
-import torch
-import sys, os
-import pandas as pd
 from bleurt import score
 
+import sys, os
+import pandas as pd
+
+from fact_score import convert_facts_into_text
+
+import torch
 from rouge_score import rouge_scorer
 from bert_score import score as bert_score
-from fact_score import convert_facts_into_text
 
 sys.path.append(os.getcwd())
 from submodules.QuestEval.questeval.questeval_metric import QuestEval
@@ -45,141 +46,141 @@ class NLPMetricEvaluator:
         self.device = device
         self.metric_type = metric_type
         self.save_path = save_path
-        # self.questeval = QuestEval(no_cuda=False, language="en")  # not yet multilingual
-        # self.ldfacts = LongDocFACTScore(self.device, self.language)
-        # self.bart = BARTScore(self.device, self.language)
+        self.questeval = QuestEval(no_cuda=False, language="en")  # not yet multilingual
+        self.ldfacts = LongDocFACTScore(self.device, self.language)
+        self.bart = BARTScore(self.device, self.language)
         self.bleurt = score.BleurtScorer(bleurt_ckpt)
 
-        # self.estime = Estime(
-        #     device=self.device,
-        #     output=["alarms", "soft", "coherence"],
-        #     path_mdl_raw=(
-        #         "bert-base-german-cased"
-        #         if self.language == "German"
-        #         else "bert-base-uncased"
-        #     ),  #'bert-base-multilingual-cased'
-        # )
-        # self.blanc_help = BlancHelp(
-        #     model_name=(
-        #         "bert-base-german-cased"
-        #         if self.language == "German"
-        #         else "bert-base-uncased"
-        #     ),
-        #     device=self.device,
-        #     inference_batch_size=64,
-        #     show_progress_bar=False,
-        # )
-        # self.blanc_tune = BlancTune(
-        #     model_name=(
-        #         "bert-base-german-cased"
-        #         if self.language == "German"
-        #         else "bert-base-uncased"
-        #     ),
-        #     device=self.device,
-        #     inference_batch_size=24,
-        #     finetune_mask_evenly=False,
-        #     finetune_batch_size=24,
-        #     show_progress_bar=False,
-        # )
+        self.estime = Estime(
+            device=self.device,
+            output=["alarms", "soft", "coherence"],
+            path_mdl_raw=(
+                "bert-base-german-cased"
+                if self.language == "German"
+                else "bert-base-uncased"
+            ),  #'bert-base-multilingual-cased'
+        )
+        self.blanc_help = BlancHelp(
+            model_name=(
+                "bert-base-german-cased"
+                if self.language == "German"
+                else "bert-base-uncased"
+            ),
+            device=self.device,
+            inference_batch_size=64,
+            show_progress_bar=False,
+        )
+        self.blanc_tune = BlancTune(
+            model_name=(
+                "bert-base-german-cased"
+                if self.language == "German"
+                else "bert-base-uncased"
+            ),
+            device=self.device,
+            inference_batch_size=24,
+            finetune_mask_evenly=False,
+            finetune_batch_size=24,
+            show_progress_bar=False,
+        )
 
-        # self.lens_path = download_model("davidheineman/lens")  # not yet multilingual
-        # self.lens = LENS(self.lens_path, rescale=True)
+        self.lens_path = download_model("davidheineman/lens")  # not yet multilingual
+        self.lens = LENS(self.lens_path, rescale=True)
 
     def compute_bleurt(self, ref, pred):
         bleurt_score = self.bleurt.score(references=ref, candidates=pred, batch_size=4)
         return bleurt_score
 
-    # def compute_lar(self, ref, pred):
-    #     lar_metric = 1 - abs(len(ref) - len(pred)) / len(ref)
-    #     return max(0.0, lar_metric)
+    def compute_lar(self, ref, pred):
+        lar_metric = 1 - abs(len(ref) - len(pred)) / len(ref)
+        return max(0.0, lar_metric)
 
-    # def compute_rouge(self, ref, pred):
-    #     rouge = rouge_scorer.RougeScorer(
-    #         ["rouge1", "rouge2", "rougeLsum"], use_stemmer=True
-    #     )
-    #     rouge_scores = rouge.score(ref, pred)
-    #     return rouge_scores
+    def compute_rouge(self, ref, pred):
+        rouge = rouge_scorer.RougeScorer(
+            ["rouge1", "rouge2", "rougeLsum"], use_stemmer=True
+        )
+        rouge_scores = rouge.score(ref, pred)
+        return rouge_scores
 
-    # def compute_bert(self, ref, pred):
-    #     P, R, F1 = bert_score(
-    #         cands=pred,
-    #         refs=ref,
-    #         model_type=(
-    #             "bert-base-uncased"
-    #             if self.language == "English"
-    #             else "google-bert/bert-base-german-cased"
-    #         ),
-    #         lang="en" if self.language == "English" else "de",
-    #         verbose=False,
-    #         idf=False,
-    #         batch_size=4,
-    #         device=self.device,
-    #         num_layers=12 if self.language == "German" else None,
-    #     )
-    #     return P, R, F1
+    def compute_bert(self, ref, pred):
+        P, R, F1 = bert_score(
+            cands=pred,
+            refs=ref,
+            model_type=(
+                "bert-base-uncased"
+                if self.language == "English"
+                else "google-bert/bert-base-german-cased"
+            ),
+            lang="en" if self.language == "English" else "de",
+            verbose=False,
+            idf=False,
+            batch_size=4,
+            device=self.device,
+            num_layers=12 if self.language == "German" else None,
+        )
+        return P, R, F1
 
-    # def compute_questeval(self, src, pred, ref):
-    #     results = self.questeval.corpus_questeval(
-    #         hypothesis=pred, sources=src, list_references=[ref]
-    #     )["ex_level_scores"]
-    #     return list(results)
+    def compute_questeval(self, src, pred, ref):
+        results = self.questeval.corpus_questeval(
+            hypothesis=pred, sources=src, list_references=[ref]
+        )["ex_level_scores"]
+        return list(results)
 
-    # def compute_meteor(self, ref, pred):
-    #     scores = []
-    #     for g, p in zip(ref, pred):
-    #         a = [word_tokenize(g, language=self.language.lower())]
-    #         b = word_tokenize(p, language=self.language.lower())
-    #         scores.append(meteor(a, b))
-    #     return scores
+    def compute_meteor(self, ref, pred):
+        scores = []
+        for g, p in zip(ref, pred):
+            a = [word_tokenize(g, language=self.language.lower())]
+            b = word_tokenize(p, language=self.language.lower())
+            scores.append(meteor(a, b))
+        return scores
 
-    # def compute_bleu(self, ref, pred):
-    #     bleu = evaluate.load("bleu")
-    #     bleu_score = bleu.compute(predictions=pred, references=ref)
-    #     return bleu_score["bleu"]
+    def compute_bleu(self, ref, pred):
+        bleu = evaluate.load("bleu")
+        bleu_score = bleu.compute(predictions=pred, references=ref)
+        return bleu_score["bleu"]
 
-    # def compute_sacrebleu(self, pred, ref):
-    #     sacrebleu = evaluate.load("sacrebleu")
-    #     sacrebleu_score = sacrebleu.compute(
-    #         tokenize="spBLEU-1K", predictions=pred, references=ref
-    #     )
-    #     return sacrebleu_score["score"]
+    def compute_sacrebleu(self, pred, ref):
+        sacrebleu = evaluate.load("sacrebleu")
+        sacrebleu_score = sacrebleu.compute(
+            tokenize="spBLEU-1K", predictions=pred, references=ref
+        )
+        return sacrebleu_score["score"]
 
-    # def compute_chrf(self, ref, pred):
-    #     chrf = evaluate.load("chrf")
-    #     chrf_score = chrf.compute(predictions=pred, references=ref)
-    #     return chrf_score["score"]
+    def compute_chrf(self, ref, pred):
+        chrf = evaluate.load("chrf")
+        chrf_score = chrf.compute(predictions=pred, references=ref)
+        return chrf_score["score"]
 
-    # def compute_perplexity(self, pred):
-    #     perplexity = evaluate.load("perplexity")
-    #     perplexity_score = perplexity.compute(predictions=pred, model_id="gpt2")
-    #     return perplexity_score["perplexities"]
+    def compute_perplexity(self, pred):
+        perplexity = evaluate.load("perplexity")
+        perplexity_score = perplexity.compute(predictions=pred, model_id="gpt2")
+        return perplexity_score["perplexities"]
 
-    # def compute_bart(self, ref, pred):
-    #     bart_metric = self.bart.bart_score(ref, pred)
-    #     return bart_metric
+    def compute_bart(self, ref, pred):
+        bart_metric = self.bart.bart_score(ref, pred)
+        return bart_metric
 
-    # def compute_ldfacts(self, src, pred):
-    #     ldfactscore = self.ldfacts.score_src_hyp_long(src, pred)
-    #     return ldfactscore
+    def compute_ldfacts(self, src, pred):
+        ldfactscore = self.ldfacts.score_src_hyp_long(src, pred)
+        return ldfactscore
 
-    # def compute_blanc(self, src, pred):
-    #     blanc_help_score = self.blanc_help.eval_once(src, pred)
-    #     blanc_tune_score = self.blanc_tune.eval_once(src, pred)
-    #     return blanc_help_score, blanc_tune_score
+    def compute_blanc(self, src, pred):
+        blanc_help_score = self.blanc_help.eval_once(src, pred)
+        blanc_tune_score = self.blanc_tune.eval_once(src, pred)
+        return blanc_help_score, blanc_tune_score
 
-    # def compute_estime(self, src, pred):
-    #     estime_score = self.estime.evaluate_claims(src, pred)
-    #     return estime_score
+    def compute_estime(self, src, pred):
+        estime_score = self.estime.evaluate_claims(src, pred)
+        return estime_score
 
-    # def compute_lens(self, src, ref, pred):
-    #     lens_score = self.lens.score(
-    #         src,
-    #         pred,
-    #         [ref],
-    #         batch_size=8,
-    #         devices=[0] if torch.cuda.is_available() else None,
-    #     )
-    #     return lens_score[0]
+    def compute_lens(self, src, ref, pred):
+        lens_score = self.lens.score(
+            src,
+            pred,
+            [ref],
+            batch_size=8,
+            devices=[0] if torch.cuda.is_available() else None,
+        )
+        return lens_score[0]
 
     def process_nlp_evaluation(self, facts):
         df = self.df[:30]
@@ -212,9 +213,6 @@ class NLPMetricEvaluator:
                 sacrebleu_score = self.compute_sacrebleu(pred, ref)
                 results.append(
                     {
-                        "Meeting": row["Meeting"],
-                        "model_summary": row["model_summary"],
-                        "ref_summary": row["ref_summary"],
                         "meteor_score": round(meteor_score[0], 3),
                         "bleu_score": round(bleu_score, 3),
                         "chrf_score": round(chrf_score, 3),
@@ -281,7 +279,7 @@ class NLPMetricEvaluator:
 
 
 if __name__ == "__main__":
-    language = "English"
+    language = "German"
     task = "nlp_eval_facts"
     device = "cuda"
     metric_type = "bleurt"
