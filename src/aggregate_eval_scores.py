@@ -22,7 +22,7 @@ def report_df(file_path, language):
 
 
 def aggregate_scores(file_path, language):
-    df = pd.read_csv(file_path)
+    df = pd.read_csv(file_path)[:30]
     if "meeting_challenges" in file_path:
         df = preprocess_llm_scores(df, language)
     elif "basic_meeting" in file_path:
@@ -60,7 +60,9 @@ def process_files(language, global_task, tasks):
         append_scores_to_file(scores_file, agg_df)
 
     combined_df = pd.concat(all_dfs, axis=1, ignore_index=False)
-    combined_df.to_csv(f"evaluation/{language}/{global_task}/combined_eval.csv")
+    combined_df.to_csv(
+        f"evaluation/{language}/{global_task}/combined_eval.csv", index=False
+    )
 
 
 if __name__ == "__main__":
