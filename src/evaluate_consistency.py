@@ -52,35 +52,3 @@ if __name__ == "__main__":
     )
     out_df = compute_lci_score(df_rej_eng, df_acc_eng, df_rej_ger, df_acc_ger)
     print(out_df.shape)
-    exit(1)
-
-    lang = "German"
-    global_task1 = "nlp_eval"
-    task1 = "combined_mini_eval"
-    file_path1 = f"evaluation/{lang}/{global_task1}/{task1}.csv"
-    df1 = pd.read_csv(file_path1)
-
-    global_task2 = "summary_eval"
-    task2 = "summary_eval"
-    file_path2 = f"evaluation/{lang}/{global_task2}/{task2}.csv"
-    df2 = pd.read_csv(file_path2)
-    agg_df2 = aggregate_scores(file_path2, lang)[:30]
-
-    agg_dict = {}
-    for col in [
-        "rouge1_f1",
-        "rouge2_f1",
-        "rougeL_f1",
-        "bert_p",
-        "bert_r",
-        "bert_f1",
-        # "LAR",
-    ]:
-        df1[f"{col}_mean"] = agg_df2[f"{col}_mean"]
-        df1[f"{col}_std"] = agg_df2[f"{col}_std"]
-
-    df1["LAR_mean"] = 0.876
-    df1["LAR_std"] = 0.109
-    # print(df1.shape)
-
-    # df1.to_csv(f"evaluation/{lang}/{global_task1}/combined_eval.csv", index= False)
