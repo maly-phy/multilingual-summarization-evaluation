@@ -42,9 +42,10 @@ def preprocess_llm_scores(df, language):
 
 def clean_basic_meeting_eval(df):
     for col in df.columns:
-        if "confidence" in col.lower():
+        if "confidence" in col.lower() or "score" in col.lower():
             df[col] = df[col].apply(convert_confidence).astype(float)
 
+    df.dropna(inplace=True)
     return df
 
 

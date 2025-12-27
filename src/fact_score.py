@@ -77,7 +77,7 @@ def generate_factual_summary(df, language, facts_path):
             f"- Then review the list of atomic facts to identify the key points discussed in the meeting.\n"
             f"Now, generate a concise and accurate summary in {language} that captures the main ideas and important details from both the transcript and the atomic facts.\n\n"
             f"Meeting transcript:\n{meeting}\n\n"
-            f"Atomic Facts:\n{facts}\n\n"
+            f"Atomic facts:\n{facts}\n\n"
             f"Please output just the summary text (complete; without bullet points) within <summary> </summary> tags and no additional text. The summary must be **strictly under 300 words**."
         )
         messages = [
