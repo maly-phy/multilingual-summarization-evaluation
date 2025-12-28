@@ -173,17 +173,6 @@ def review_and_correct_summary(language, facts_path):
     return output_df
 
 
-# def break_and_review_summary(df):
-#     encoder = SentenceTransformer("sentence-transformers/all-MiniLM-L6-v2")
-#     all_sents = []
-#     for idx, row in df[:5].iterrows():
-#         ref_summary = row["ref_summary"]
-#         sents = sent_tokenize(ref_summary)
-#         all_sents.append(sents)
-#         for i, sents in enumerate(all_sents):
-#             pass
-
-
 def convert_facts_into_text(file_path):
     with open(file_path, "r", encoding="utf-8") as f:
         atomic_facts = json.load(f)
