@@ -126,7 +126,6 @@ Here we present the evaluation results of the initial and regenerated summaries 
 | **Estime alarms** | 87.06 $\pm$ 15.1 | **50.3** $\pm$ 18.9 |128 $\pm$ 17| **79** $\pm$ 29|
 | **Estime soft** | 0.64 $\pm$ 0.05 | **0.81** $\pm$ 0.08 |0.25 $\pm$ 0.06| **0.6** $\pm$ 0.17|
 | **Estime coherence** | 0.23 $\pm$ 0.12 | **0.36** $\pm$ 0.22 |0.1 $\pm$ 0.07| **0.38** $\pm$ 0.17|
-
 </details>
 
 ### Evaluation of the Meeting Transcript (Criteria – LLM as Judge)
@@ -146,7 +145,6 @@ We presnt the results of evaluating the meeting transcript against its source ar
 |**Contexual turn taking**| 3.8 $\pm$ 0.36| 80 $\pm$ 0.0| **4.0** $\pm$ 0.0| 80 $\pm$ 0.0|
 |**Implicit context**| 3.8 $\pm$ 0.36| 80 $\pm$ 0.0| **4.0** $\pm$ 0.0 | 80 $\pm$ 0.0|
 |**Low information density**| **3.4** $\pm$ 0.68| 80 $\pm$ 0.0| 3.3 $\pm$ 0.85| 80 $\pm$ 0.0|
-
 </details>
 
 ### Summary Evaluation (Basic Criteria – LLM as Judge)
