@@ -1,0 +1,112 @@
+bart_score_mean: -2.5880999999999994
+
+bart_score_std: 0.43514502933128413
+
+ldfact_score_mean: -1.7154666666666665
+
+ldfact_score_std: 0.4030718027360876
+
+questeval_score_mean: 0.5254666666666667
+
+questeval_score_std: 0.08687356382671325
+
+bert_p_mean: 0.6974333333333332
+
+bert_p_std: 0.05450446570336412
+
+bert_r_mean: 0.6867
+
+bert_r_std: 0.053590497098929255
+
+bert_f1_mean: 0.6917333333333334
+
+bert_f1_std: 0.05241672103134801
+
+blanc_help_score_mean: 0.30849999999999994
+
+blanc_help_score_std: 0.07160078500821833
+
+blanc_tune_score_mean: 0.23289999999999997
+
+blanc_tune_score_std: 0.07355849185605923
+
+estime_alarms_mean: 50.3
+
+estime_alarms_std: 18.89380485950264
+
+estime_soft_mean: 0.8056666666666666
+
+estime_soft_std: 0.08264562208958628
+
+estime_coherence_mean: 0.3561
+
+estime_coherence_std: 0.21781760006150036
+
+bleurt_score_mean: 0.4224
+
+bleurt_score_std: 0.05934214063523841
+
+meteor_score_mean: 0.4081333333333334
+
+meteor_score_std: 0.08265580202983577
+
+bleu_score_mean: 0.23346666666666666
+
+bleu_score_std: 0.11087636274739514
+
+chrf_score_mean: 56.78940000000001
+
+chrf_score_std: 7.148296216581963
+
+perplexity_score_mean: 18.13713333333333
+
+perplexity_score_std: 5.9411636253337194
+
+sacrebleu_score_mean: 27.462933333333336
+
+sacrebleu_score_std: 10.812171586189121
+
+lar_score_mean: 0.8512
+
+lar_score_std: 0.17541603748487922
+
+rouge1_precision_mean: 0.5345666666666666
+
+rouge1_precision_std: 0.10686365251985848
+
+rouge1_recall_mean: 0.5606333333333333
+
+rouge1_recall_std: 0.0902477369410918
+
+rouge1_f1_mean: 0.5439
+
+rouge1_f1_std: 0.09163772374842745
+
+rouge2_precision_mean: 0.2771
+
+rouge2_precision_std: 0.1144294241156892
+
+rouge2_recall_mean: 0.28963333333333335
+
+rouge2_recall_std: 0.11064777397244586
+
+rouge2_f1_mean: 0.2815666666666667
+
+rouge2_f1_std: 0.11100689116022243
+
+rougeL_precision_mean: 0.4376666666666666
+
+rougeL_precision_std: 0.11830741176342638
+
+rouge_recall_mean: 0.4574333333333334
+
+rouge_recall_std: 0.10762344422627644
+
+rougeL_f1_mean: 0.4446666666666666
+
+rougeL_f1_std: 0.10946148222984203
+
+lens_score_mean: 58.2157
+
+lens_score_std: 6.8018144848420325
+

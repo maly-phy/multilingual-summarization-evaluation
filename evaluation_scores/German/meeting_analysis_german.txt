@@ -1,0 +1,23 @@
+
+=== GENERAL ===
+num_meetings: 261
+meeting_per_type: {'Casual': 48, 'Decision-Making': 32, 'Innovation': 33, 'Brainstorming': 31, 'Cross-Functional': 45, 'Stakeholder': 41, 'Remote': 31}
+avg_num_participants: 4.345
+
+=== TURN_LEVEL ===
+total_turns: 18429
+total_words: 525417
+total_scenes: 1972
+avg_turns_per_meeting: 70.609
+avg_words_per_meeting: 2013.092
+avg_words_per_turn: 28.51
+avg_scenes_per_meeting: 7.556
+
+=== LINGUISTIC_DIVERSITY ===
+vocab_size: 19188
+total_tokens: 525417
+type_token_ratio: 0.03652
+
+=== SUMMARY ===
+total_summary_words: 38982
+avg_summary_length_in_words: 149.356

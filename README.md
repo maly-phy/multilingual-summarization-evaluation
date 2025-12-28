@@ -8,6 +8,13 @@ git clone https://gitlab.gwdg.de/mohamed.aly/multilingual-summarization-evaluati
 cd multilingual-summarization-evaluation
 pip install -r requirements.txt
 ```
+create `submodules` directory to download the necessary evaluation modules in it for custom use.
+```bash
+git clone https://github.com/ThomasScialom/QuestEval.git
+git clone https://github.com/jbshp/LongDocFACTScore.git
+git clone https://github.com/PrimerAI/blanc.git
+git clone https://github.com/Yao-Dou/LENS.git
+```
 
 ## Data
 We use the synthesis dataset from [You need to MIMIC to get FAME: Solving Meeting Transcript Scarcity with a Multi-Agent Conversations](https://aclanthology.org/2025.findings-acl.599/)

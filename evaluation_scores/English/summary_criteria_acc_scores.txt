@@ -1,0 +1,24 @@
+Linguistic_confidence_mean: 90.83333333333333
+
+Linguistic_confidence_std: 1.8952451089472586
+
+Linguistic_score_mean: 4.52
+
+Linguistic_score_std: 0.1749876842957023
+
+Naturalness_confidence_mean: 82.66666666666667
+
+Naturalness_confidence_std: 5.529440536227707
+
+Naturalness_score_mean: 3.9400000000000004
+
+Naturalness_score_std: 0.48180694373834293
+
+Factuality_confidence_mean: 85.5
+
+Factuality_confidence_std: 7.468323912965045
+
+Factuality_score_mean: 4.026666666666666
+
+Factuality_score_std: 0.59418639437837
+

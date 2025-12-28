@@ -1,0 +1,32 @@
+Naturalness_base_confidence_mean: 86.20689655172414
+
+Naturalness_base_confidence_std: 4.5621056412333765
+
+Naturalness_base_score_mean: 3.8620689655172415
+
+Naturalness_base_score_std: 0.4411136823860458
+
+Coherence_base_confidence_mean: 83.10344827586206
+
+Coherence_base_confidence_std: 4.708236154307585
+
+Coherence_base_score_mean: 3.6206896551724137
+
+Coherence_base_score_std: 0.5614899250748772
+
+Interesting_base_confidence_mean: 89.65517241379311
+
+Interesting_base_confidence_std: 1.8569533817705186
+
+Interesting_base_score_mean: 4.0
+
+Interesting_base_score_std: 0.0
+
+Consistency_base_confidence_mean: 82.06896551724138
+
+Consistency_base_confidence_std: 3.8999178973295487
+
+Consistency_base_score_mean: 3.896551724137931
+
+Consistency_base_score_std: 0.3099340466946034
+

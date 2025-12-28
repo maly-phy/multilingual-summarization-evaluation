@@ -1,0 +1,24 @@
+Linguistic_base_confidence_mean: 89.06666666666666
+
+Linguistic_base_confidence_std: 2.0998084203800236
+
+Linguistic_base_score_mean: 4.27
+
+Linguistic_base_score_std: 0.1290549201456228
+
+Naturalness_base_confidence_mean: 80.83333333333333
+
+Naturalness_base_confidence_std: 6.833403419881674
+
+Naturalness_base_score_mean: 3.9933333333333336
+
+Naturalness_base_score_std: 0.4933581851460202
+
+Factuality_confidence_mean: 65.34482758620689
+
+Factuality_confidence_std: 33.962453914022014
+
+Factuality_score_mean: 3.162068965517242
+
+Factuality_score_std: 1.3446756892870513
+

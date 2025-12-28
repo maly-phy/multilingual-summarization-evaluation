@@ -1,0 +1,36 @@
+rouge1_precision_mean: 0.5271085584436582
+
+rouge1_precision_std: 0.14538341138334426
+
+rouge1_recall_mean: 0.26537166589180344
+
+rouge1_recall_std: 0.14300028946878796
+
+rouge1_f1_mean: 0.3037662415048017
+
+rouge1_f1_std: 0.08238446306138887
+
+rouge2_precision_mean: 0.10764398443656834
+
+rouge2_precision_std: 0.04048093736730016
+
+rouge2_recall_mean: 0.05207114459983387
+
+rouge2_recall_std: 0.03509788968450039
+
+rouge2_f1_mean: 0.06014686828497948
+
+rouge2_f1_std: 0.01763720493226082
+
+rougel_precision_mean: 0.16840452376124926
+
+rougel_precision_std: 0.05028243215743197
+
+rougel_recall_mean: 0.08941865771885349
+
+rougel_recall_std: 0.07700675048780943
+
+rougel_f1_mean: 0.09571855692183942
+
+rougel_f1_std: 0.021708700857983376
+

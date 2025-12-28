@@ -1,0 +1,56 @@
+Spoken_language_Score_mean: 2.6551724137931036
+
+Spoken_language_Score_std: 1.2614012069623641
+
+Spoken_language_Confidence_mean: 80.0
+
+Spoken_language_Confidence_std: 0.0
+
+Speaker_dynamics_Score_mean: 4.0
+
+Speaker_dynamics_Score_std: 0.0
+
+Speaker_dynamics_Confidence_mean: 80.0
+
+Speaker_dynamics_Confidence_std: 0.0
+
+Coreference_Score_mean: 2.896551724137931
+
+Coreference_Score_std: 1.0122403577569516
+
+Coreference_Confidence_mean: 80.0
+
+Coreference_Confidence_std: 0.0
+
+Discourse_structure_Score_mean: 4.0
+
+Discourse_structure_Score_std: 0.0
+
+Discourse_structure_Confidence_mean: 80.0
+
+Discourse_structure_Confidence_std: 0.0
+
+Contexual_turn-taking_Score_mean: 4.0
+
+Contexual_turn-taking_Score_std: 0.0
+
+Contexual_turn-taking_Confidence_mean: 80.0
+
+Contexual_turn-taking_Confidence_std: 0.0
+
+Implicit_context_Score_mean: 4.0
+
+Implicit_context_Score_std: 0.0
+
+Implicit_context_Confidence_mean: 80.0
+
+Implicit_context_Confidence_std: 0.0
+
+Low_information_density_Score_mean: 3.310344827586207
+
+Low_information_density_Score_std: 0.8495144947835149
+
+Low_information_density_Confidence_mean: 80.0
+
+Low_information_density_Confidence_std: 0.0
+

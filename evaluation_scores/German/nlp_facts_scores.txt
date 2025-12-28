@@ -1,0 +1,224 @@
+bart_score_mean: -3.690033333333333
+
+bart_score_std: 0.8202483006459956
+
+ldfact_score_mean: -3.6885
+
+ldfact_score_std: 0.4949357847584702
+
+questeval_score_mean: 0.4067666666666667
+
+questeval_score_std: 0.06819125403185354
+
+bert_p_mean: 0.7726000000000001
+
+bert_p_std: 0.05560798751853973
+
+bert_r_mean: 0.7688666666666666
+
+bert_r_std: 0.06670611476563776
+
+bert_f1_mean: 0.7704666666666667
+
+bert_f1_std: 0.059556830774933144
+
+blanc_help_score_mean: 0.7080666666666667
+
+blanc_help_score_std: 0.08785290736983799
+
+blanc_tune_score_mean: 0.2914666666666667
+
+blanc_tune_score_std: 0.08545929998556616
+
+estime_alarms_mean: 78.5
+
+estime_alarms_std: 28.8704000665041
+
+estime_soft_mean: 0.6049666666666664
+
+estime_soft_std: 0.1703692710137222
+
+estime_coherence_mean: 0.3854
+
+estime_coherence_std: 0.1685382592398124
+
+bleurt_score_mean: 0.41853333333333337
+
+bleurt_score_std: 0.09683570634321052
+
+meteor_score_mean: 0.45890000000000003
+
+meteor_score_std: 0.12407293461286499
+
+bleu_score_mean: 0.3442999999999999
+
+bleu_score_std: 0.16352626067709883
+
+chrf_score_mean: 63.0995
+
+chrf_score_std: 9.627514502715641
+
+perplexity_score_mean: 29.9858
+
+perplexity_score_std: 6.902465128863196
+
+sacrebleu_score_mean: 40.212333333333326
+
+sacrebleu_score_std: 15.787583950323294
+
+lar_score_mean: 0.8758333333333332
+
+lar_score_std: 0.12047294254336727
+
+rouge1_precision_mean: 0.5505333333333334
+
+rouge1_precision_std: 0.13523612385528616
+
+rouge1_recall_mean: 0.5982000000000002
+
+rouge1_recall_std: 0.11911148067078256
+
+rouge1_f1_mean: 0.5712333333333334
+
+rouge1_f1_std: 0.1235753806898594
+
+rouge2_precision_mean: 0.3644666666666667
+
+rouge2_precision_std: 0.16668672522974373
+
+rouge2_recall_mean: 0.39553333333333335
+
+rouge2_recall_std: 0.16392086680686097
+
+rouge2_f1_mean: 0.37783333333333335
+
+rouge2_f1_std: 0.16380309527902245
+
+rougeL_precision_mean: 0.4664333333333334
+
+rougeL_precision_std: 0.1521658993320784
+
+rougeL_recall_mean: 0.5060333333333333
+
+rougeL_recall_std: 0.14423890224048513
+
+rougeL_f1_mean: 0.48363333333333336
+
+rougeL_f1_std: 0.1455828910309159
+
+lens_score_mean: 46.2994
+
+lens_score_std: 6.155955135280488
+
+bart_score_mean: -3.690033333333333
+
+bart_score_std: 0.8202483006459956
+
+ldfact_score_mean: -3.6885
+
+ldfact_score_std: 0.4949357847584702
+
+questeval_score_mean: 0.4067666666666667
+
+questeval_score_std: 0.06819125403185354
+
+bert_p_mean: 0.7726000000000001
+
+bert_p_std: 0.05560798751853973
+
+bert_r_mean: 0.7688666666666666
+
+bert_r_std: 0.06670611476563776
+
+bert_f1_mean: 0.7704666666666667
+
+bert_f1_std: 0.059556830774933144
+
+blanc_help_score_mean: 0.7080666666666667
+
+blanc_help_score_std: 0.08785290736983799
+
+blanc_tune_score_mean: 0.2914666666666667
+
+blanc_tune_score_std: 0.08545929998556616
+
+estime_alarms_mean: 78.5
+
+estime_alarms_std: 28.8704000665041
+
+estime_soft_mean: 0.6049666666666664
+
+estime_soft_std: 0.1703692710137222
+
+estime_coherence_mean: 0.3854
+
+estime_coherence_std: 0.1685382592398124
+
+bleurt_score_mean: 0.41853333333333337
+
+bleurt_score_std: 0.09683570634321052
+
+meteor_score_mean: 0.45890000000000003
+
+meteor_score_std: 0.12407293461286499
+
+bleu_score_mean: 0.3442999999999999
+
+bleu_score_std: 0.16352626067709883
+
+chrf_score_mean: 63.0995
+
+chrf_score_std: 9.627514502715641
+
+perplexity_score_mean: 29.9858
+
+perplexity_score_std: 6.902465128863196
+
+sacrebleu_score_mean: 40.212333333333326
+
+sacrebleu_score_std: 15.787583950323294
+
+lar_score_mean: 0.8758333333333332
+
+lar_score_std: 0.12047294254336727
+
+rouge1_precision_mean: 0.5505333333333334
+
+rouge1_precision_std: 0.13523612385528616
+
+rouge1_recall_mean: 0.5982000000000002
+
+rouge1_recall_std: 0.11911148067078256
+
+rouge1_f1_mean: 0.5712333333333334
+
+rouge1_f1_std: 0.1235753806898594
+
+rouge2_precision_mean: 0.3644666666666667
+
+rouge2_precision_std: 0.16668672522974373
+
+rouge2_recall_mean: 0.39553333333333335
+
+rouge2_recall_std: 0.16392086680686097
+
+rouge2_f1_mean: 0.37783333333333335
+
+rouge2_f1_std: 0.16380309527902245
+
+rougeL_precision_mean: 0.4664333333333334
+
+rougeL_precision_std: 0.1521658993320784
+
+rougeL_recall_mean: 0.5060333333333333
+
+rougeL_recall_std: 0.14423890224048513
+
+rougeL_f1_mean: 0.48363333333333336
+
+rougeL_f1_std: 0.1455828910309159
+
+lens_score_mean: 46.2994
+
+lens_score_std: 6.155955135280488
+

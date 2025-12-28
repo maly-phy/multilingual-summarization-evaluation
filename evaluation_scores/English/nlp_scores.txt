@@ -1,0 +1,60 @@
+blanc_help_score_mean: 0.13076666666666664
+
+blanc_help_score_std: 0.025401172024729194
+
+blanc_tune_score_mean: 0.08830000000000002
+
+blanc_tune_score_std: 0.019896542759813913
+
+bleurt_score_mean: 0.40913333333333324
+
+bleurt_score_std: 0.04878152090299354
+
+meteor_score_mean: 0.27310000000000006
+
+meteor_score_std: 0.050834654213100704
+
+bleu_score_mean: 0.03996666666666667
+
+bleu_score_std: 0.03501574358557268
+
+chrf_score_mean: 44.60143333333333
+
+chrf_score_std: 4.0397766299066875
+
+perplexity_score_mean: 21.3539
+
+perplexity_score_std: 4.10334015625454
+
+bart_score_mean: -3.175333333333333
+
+bart_score_std: 0.29919873839552075
+
+ldfact_score_mean: -2.4557666666666673
+
+ldfact_score_std: 0.22309835210651754
+
+lens_score_mean: 58.50650000000001
+
+lens_score_std: 6.067751272094135
+
+questeval_score_mean: 0.4066333333333334
+
+questeval_score_std: 0.05305851248505217
+
+sacrebleu_score_mean: 8.441466666666667
+
+sacrebleu_score_std: 3.8041595540465543
+
+estime_alarms_mean: 87.06666666666666
+
+estime_alarms_std: 15.138289734707618
+
+estime_soft_mean: 0.6415333333333332
+
+estime_soft_std: 0.048751115519214704
+
+estime_coherence_mean: 0.23253333333333331
+
+estime_coherence_std: 0.11890266472270888
+

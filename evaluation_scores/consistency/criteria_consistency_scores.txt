@@ -1,0 +1,12 @@
+|**Linguistic_confidence_lci: 0.9076923076923034
+
+Linguistic_score_lci: 0.7400000000000002
+
+Naturalness_confidence_lci: 0.7391304347826102
+
+Naturalness_score_lci: 0.5747663551401873
+
+Factuality_confidence_lci: 0.5477067842337302
+
+Factuality_score_lci: 0.7050424168876712
+
