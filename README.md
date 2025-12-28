@@ -51,7 +51,7 @@ We start by prompting the model to generate an initial summary for each language
 **Rouge**: it is a count-based metric that compares word overlap between the predicted generated summary and the reference. We use 1-2 grams and the longest common subsequence, and compute the precision, recall and f1-score for each rouge type.  
 **Bleu**: similar to rouge but focuses on precision (matched words from the candidate to the reference summary).  
 **Meteor**: it is based on harmonic mean between precision and recall. We use the appropriate word tokenizer for each language from NLTK.  
-**CHRF**: it calculates the similarity using character n-grams instead of word n-grams which is suitable for high morphology language like German. It also accounts for the F-score which is more convenient.
+**CHRF**: it calculates the similarity using character n-grams instead of word n-grams which is suitable for high morphology language like German. It also accounts for the F-score which is more convenient.  
 **Perplexity**: it measures the probability the model predicts the next word, quantifying the model's surprise. It cannot be compared across datasets of different vocab size as in our case. The lower perplexity the better.  
 **Sacrebleu**: it is extended implementation of the bleu metric that provides additional features. We use the `spBLEU-1K` tokenizer which is more robust for multilingual text.  
 **Bleurt**: it measures how the candidate text is fluent and conveys the meaning of the reference. It is a trained metric based on BERT model, and can be finetuned to specific data. We implement it from its [official repository](https://github.com/google-research/bleurt). We use the pretrained checkpoints [BLEURT-20-D12](https://storage.googleapis.com/bleurt-oss-21/BLEURT-20.zip) which was tested on 13 languages including English and German.  
@@ -123,6 +123,7 @@ Here we present the evaluation results of the initial and regenerated summaries 
 | **Estime alarms** | 87.06 $\pm$ 15.1 | **50.3** $\pm$ 18.9 |128 $\pm$ 17| **79** $\pm$ 29|
 | **Estime soft** | 0.64 $\pm$ 0.05 | **0.81** $\pm$ 0.08 |0.25 $\pm$ 0.06| **0.6** $\pm$ 0.17|
 | **Estime coherence** | 0.23 $\pm$ 0.12 | **0.36** $\pm$ 0.22 |0.1 $\pm$ 0.07| **0.38** $\pm$ 0.17|
+
 </details>
 
 ### Evaluation of the Meeting Transcript (Criteria – LLM as Judge)
@@ -142,6 +143,7 @@ We presnt the results of evaluating the meeting transcript against its source ar
 |**Contexual turn taking**| 3.8 $\pm$ 0.36| 80 $\pm$ 0.0| **4.0** $\pm$ 0.0| 80 $\pm$ 0.0|
 |**Implicit context**| 3.8 $\pm$ 0.36| 80 $\pm$ 0.0| **4.0** $\pm$ 0.0 | 80 $\pm$ 0.0|
 |**Low information density**| **3.4** $\pm$ 0.68| 80 $\pm$ 0.0| 3.3 $\pm$ 0.85| 80 $\pm$ 0.0|
+
 </details>
 
 ### Summary Evaluation (Basic Criteria – LLM as Judge)
