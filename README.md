@@ -95,7 +95,7 @@ $$
 \Delta S_{\text{norm}} = \max_{i} \Delta S_i
 $$  
 
-where $N$ is the total number of languages. If the model is fairly consistent, then $\mathrm{LCI} = 1$. The script of this section is `src/evaluate_consistency.py`.
+where $\mathrm{N}$ is the total number of languages. If the model is fairly consistent, then $\mathrm{LCI} = 1$. The script of this section is `src/evaluate_consistency.py`.
 
 ## Results
 ### Summary Evaluation (NLP Metrics)
