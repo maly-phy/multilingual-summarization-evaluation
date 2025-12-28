@@ -3,17 +3,24 @@ This is the official repository of the multilingual summarization evaluation pro
 We measure the consistency of results between English and German for all evaluation metrics to see how the scores change between languages.  I 
 
 ## Installation
-```bash
+```sh
 git clone https://gitlab.gwdg.de/mohamed.aly/multilingual-summarization-evaluation.git
 cd multilingual-summarization-evaluation
+pip install --upgrade pip
 pip install -r requirements.txt
 ```
 create `submodules` directory to download the necessary evaluation modules in it for custom use.
-```bash
+```sh
 git clone https://github.com/ThomasScialom/QuestEval.git
 git clone https://github.com/jbshp/LongDocFACTScore.git
 git clone https://github.com/PrimerAI/blanc.git
 git clone https://github.com/Yao-Dou/LENS.git
+```
+We advise installing `bleurt` in a separate environment to avoid conflicts between tensorflow and torch.
+```sh
+git clone https://github.com/google-research/bleurt.git
+cd bleurt
+pip install .
 ```
 
 ## Data
