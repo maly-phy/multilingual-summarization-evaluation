@@ -86,12 +86,15 @@ We estimate the correlation with the model scores of the initial summary (withou
 ### Multilingual Consistence
 We estimate the model's consistence scoring between languages, which is basically that if the model judgement is consistent across languages, then we expect it to give the same evaluation score to all multilingual summaries if they contain exactly the same content. The model's knowledge of English is excellent but then it degrades to other languages, especially the low source ones which we don't cover in this work.   
 We calculate the SOTA `Language Consistence Index` (LCI) [Son, et al.](https://arxiv.org/pdf/2410.17578) for all evaluation metrics of the summary, given an accepted summary (regenerated with help of atomic facts) and a rejected one (initial without atomic facts). We take the difference between average scores of the rejected and accepted summaries for each language as follows:  
+
 $$  
 \mathrm{LCI} = \frac{1}{N} \sum_{i=1}^{N} \frac{\Delta S_i}{\Delta S_{\text{norm}}}  
 $$  
+
 $$  
 \Delta S_{\text{norm}} = \max_{i} \Delta S_i  
 $$  
+
 where $N$ is the total number of languages. If the model is fairly consistent, then $\mathrm{LCI} = 1$. The script of this section is `src/evaluate_consistency.py`.
 
 ## Results
