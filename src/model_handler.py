@@ -2,10 +2,21 @@ import time, random
 
 
 class ModelHandler:
-    def __init__(self, client, model_name, max_tokens):
+    def __init__(
+        self,
+        client,
+        model_name,
+        max_tokens,
+        top_p=0.95,
+        frequency_penalty=0.5,
+        presence_penalty=0.5,
+    ):
         self.client = client
         self.model_name = model_name
         self.max_tokens = max_tokens
+        self.top_p = top_p
+        self.frequency_penalty = frequency_penalty
+        self.presence_penalty = presence_penalty
 
     def base_call_model(self, messages):
         response = self.client.chat.completions.create(
@@ -13,9 +24,9 @@ class ModelHandler:
             model=self.model_name,
             max_tokens=self.max_tokens,
             temperature=0.0,
-            top_p=0.95,
-            frequency_penalty=0.5,
-            presence_penalty=0.5,
+            top_p=self.top_p,
+            frequency_penalty=self.frequency_penalty,
+            presence_penalty=self.presence_penalty,
             stop=None,
             n=1,
         )
