@@ -28,3 +28,13 @@ def initialize_model(
         presence_penalty=0.0,
     )
     return model_init
+
+
+def text_chunker(text, chunk_size=15):  # 20 for ENG
+    words = text.split()
+    all_chunks = []
+    for i in range(0, len(words), chunk_size):
+        chunk = " ".join(words[i : i + chunk_size])
+        all_chunks.append(chunk)
+    results = "\n\n".join(all_chunks)
+    return results

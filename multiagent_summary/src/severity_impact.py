@@ -93,10 +93,14 @@ if __name__ == "__main__":
     )
     severity_df = pd.read_csv(severity_df_path)
     max_tokens = 3000
-    init_severity = SeverityImpactScorer(
-        severity_df, language, max_tokens, criteria_path
-    )
-    init_severity.process_severity_impact()
+    # init_severity = SeverityImpactScorer(
+    #     severity_df, language, max_tokens, criteria_path
+    # )
+    # init_severity.process_severity_impact()
 
-    # out_df = pd.read_csv("multiagent_summary/evaluation/error_based/error_severity.csv")
-    # print(out_df["Redundancy"])
+    out_df = pd.read_csv(
+        f"multiagent_summary/evaluation/{language}/error_based/error_severity.csv"
+    )
+    for i in range(len(list(out_df.columns))):
+        if i == 2:
+            print(out_df.columns[i])

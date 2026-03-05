@@ -25,21 +25,22 @@ class FeedbackSystem:
                 "2. Read the summary carefully.\n"
                 "3. Read the observed error instances, and the chain-of-thought reasoning of why they are considered errors.\n"
                 "4. Consider the impact score of the error instances on the quality of the summary. The score ranges from 0 (no impact at all and thus high quality summary) to 5 (high impact and thus poor quality summary).\n\n"
-                "5. Provide your suggestions or changes that should be made to correct the error instances to end up with no or less impact of the error type on the quality of the summary.\n"
+                "5. Provide your suggestions or changes that should be made to correct each error instance to end up with no or less impact of the error type on the quality of the summary.\n"
                 "6. Write down a short reasoning explaining why you consider these changes are effective towards improving the summary.\n"
                 "7. Additionally, provide a confidence score for your suggestions certainty, ranging from 0 (totally unsure) to 10 (totally sure).\n"
                 "Tip: Consider the whole input, i.e., the meeting transcript, the summary, and the error instances with their reasoning provided in the user's prompt to make a good decision that humans will agree on.\n\n"
-                "Now, you should perform the task given the following inputs:\n"
+                "Now, you should perform the task, given the following inputs:\n"
                 f"Meeting transcript: {meeting_transcript}\n"
                 f"Summary: {model_summary}\n"
                 f"Error instances: {self.error_df.iloc[idx][criterion]}\n"
                 f"Error impact score on summary quality: {self.impact_df.iloc[idx][criterion]}\n"
                 "Please ensure that your answer is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
-                "{\n"
+                "[{\n"
+                '  "instance": "<error instance>",\n'
                 '  "feedback": "<your suggestions to correct the error instances for a better summary>",\n'
                 '  "reasoning": "<chain-of-thought reasoning>",\n'
                 '  "confidence_score": "<0-10>"\n'
-                "}"
+                "}, {<same for instance 2>},...{<same for instance n>}]"
             )
             response = model_init.call_model(system_prompt, user_prompt)
             if not response:
@@ -76,7 +77,9 @@ class FeedbackSystem:
             )
 
         output_df = pd.DataFrame(results)
-        save_dir = f"multiagent_summary/evaluation/{self.language}/error_based/feedback_overall.csv"
+        save_dir = (
+            f"multiagent_summary/evaluation/{self.language}/error_based/feedback.csv"
+        )
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
         output_df.to_csv(save_dir, index=False)
         print(f"Feedback results saved to {save_dir}")
