@@ -41,11 +41,11 @@ class SeverityScorer:
                 "Please ensure that each instance is provided strictly in **valid JSON format**, using **double quotes** for keys and values, and no additional text outside the JSON structure. Return your answer only in the following format:\n"
                 "[{\n"
                 '  "error_exists": <yes or no depending on you decision>,\n'
-                '  "instance": "<text passage, sentence or words from summary",\n'
-                '  "location": "<beginning, middle or end of the summary>",\n'
-                '  "reasoning": "<chain-of-thought reasoning>",\n'
-                '  "severity_score": "<1-5>",\n'
-                '  "confidence_score": "<0-10>"\n'
+                '  "instance": "<text passage, sentence or words from summary, if error exists else "">",\n'
+                '  "location": "<beginning, middle or end of the summary if error exists else "">",\n'
+                '  "reasoning": "<chain-of-thought reasoning if error exists else "">",\n'
+                '  "severity_score": "<1-5 if error exists else "">",\n'
+                '  "confidence_score": "<0-10 if error exists else "">"\n'
                 "},\n"
                 "{<same for instance 2>},...{<same for instance n>}]\n"
                 "Make sure the output is strictly valid JSON, with no preambles, extra explanations, or text outside the JSON structure."
@@ -85,7 +85,7 @@ class SeverityScorer:
             )
 
         output_df = pd.DataFrame(results)
-        save_dir = f"multiagent_summary/evaluation/{self.language}/error_based/error_severity.csv"
+        save_dir = f"multiagent_summary/evaluation/{self.language}/less_strict_error/error_severity.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
         output_df.to_csv(save_dir, index=False)
         print(f"Severity results saved to {save_dir}")
@@ -103,9 +103,7 @@ if __name__ == "__main__":
     # init_severity.process_error_severity()
 
     out_df = pd.read_csv(
-        f"multiagent_summary/evaluation/{language}/error_based/error_severity.csv"
+        f"multiagent_summary/evaluation/{language}/less_strict_error/error_severity.csv"
     )
-    # print(out_df.iloc[1]["Hallucination"])
-    os.makedirs("multiagent_summary/outputs", exist_ok=True)
-    with open("multiagent_summary/outputs/error_severity.json", "w") as f:
-        f.write(json.dumps(out_df.iloc[1]["Hallucination"], indent=4))
+    with open(f"multiagent_summary/outputs/{language}/error_severity.json", "w") as f:
+        f.write(json.dumps(out_df.iloc[1]["Omission"], indent=4))

@@ -4,9 +4,8 @@ from utils import read_json_criteria, initialize_model
 
 
 class FeedbackSystem:
-    def __init__(self, error_df, impact_df, language, max_tokens, criteria_path):
+    def __init__(self, error_df, language, max_tokens, criteria_path):
         self.error_df = error_df
-        self.impact_df = impact_df
         self.language = language
         self.max_tokens = max_tokens
         self.criteria = read_json_criteria(criteria_path)
@@ -16,31 +15,29 @@ class FeedbackSystem:
         collect_feedback = {}
         for criterion, description in self.criteria.items():
             user_prompt = (
-                "You will be given a summary for a meeting transcript, a defined error type, a list of potential error instances extracted from the summary for the considered error type, and their overall impact score on the quality of the summary.\n"
+                "You will be given a summary for a meeting transcript, a defined error type, a list of potential error instances extracted from the summary for the considered error type, accompanied with their severity scores.\n"
                 "Your task is to provide feedback and suggestions on how to correct the error instances found in the summary for the considered error type. What changes would you propose to reduce the error's impact on the quality of the summary?\n"
                 "Please make sure you read and understand the following instructions carefully that guide you through the task. Following is the error type you should consider:\n"
                 f"{criterion}: {description['definition']}.\n\n"
                 "Instructions:\n"
                 "1. Read the meeting transcript carefully and identify the main topics and key points discussed.\n"
                 "2. Read the summary carefully.\n"
-                "3. Read the observed error instances, and the chain-of-thought reasoning of why they are considered errors.\n"
-                "4. Consider the impact score of the error instances on the quality of the summary. The score ranges from 0 (no impact at all and thus high quality summary) to 5 (high impact and thus poor quality summary).\n\n"
+                "3. Consider the list of observed error instances, the chain-of-thought reasoning of why they are considered errors, and the severity of the error instances which ranges from 1 (low severity) to 5 (high severity).\n"
                 "5. Provide your suggestions or changes that should be made to correct each error instance to end up with no or less impact of the error type on the quality of the summary.\n"
+                "Please pay more attention to the highly severe error instances that worsen the quality of the summary.\n"
                 "6. Write down a short reasoning explaining why you consider these changes are effective towards improving the summary.\n"
                 "7. Additionally, provide a confidence score for your suggestions certainty, ranging from 0 (totally unsure) to 10 (totally sure).\n"
-                "Tip: Consider the whole input, i.e., the meeting transcript, the summary, and the error instances with their reasoning provided in the user's prompt to make a good decision that humans will agree on.\n\n"
+                "Tip: Consider the whole input, i.e., the meeting transcript, the summary, and the error instances provided in the user's prompt to make a good decision that humans will agree on.\n\n"
                 "Now, you should perform the task, given the following inputs:\n"
                 f"Meeting transcript: {meeting_transcript}\n"
                 f"Summary: {model_summary}\n"
                 f"Error instances: {self.error_df.iloc[idx][criterion]}\n"
-                f"Error impact score on summary quality: {self.impact_df.iloc[idx][criterion]}\n"
                 "Please ensure that your answer is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
-                "[{\n"
-                '  "instance": "<error instance>",\n'
-                '  "feedback": "<your suggestions to correct the error instances for a better summary>",\n'
+                "{\n"
+                '  "feedback": "<your suggestions to correct the error instances for a high quality summary>",\n'
                 '  "reasoning": "<chain-of-thought reasoning>",\n'
                 '  "confidence_score": "<0-10>"\n'
-                "}, {<same for instance 2>},...{<same for instance n>}]"
+                "}"
             )
             response = model_init.call_model(system_prompt, user_prompt)
             if not response:
@@ -89,13 +86,10 @@ if __name__ == "__main__":
     criteria_path = "multiagent_summary/error_types/error_types_eng.json"
     language = "English"
     error_df_path = (
-        f"multiagent_summary/evaluation/{language}/error_based/error_severity.csv"
+        f"multiagent_summary/evaluation/{language}/less_strict_error/error_severity.csv"
     )
-    impact_df_path = (
-        f"multiagent_summary/evaluation/{language}/error_based/severity_impact.csv"
-    )
+    impact_df_path = f"multiagent_summary/evaluation/{language}/less_strict_error/severity_impact.csv"
     error_df = pd.read_csv(error_df_path)
-    impact_df = pd.read_csv(impact_df_path)
     max_tokens = 3000
-    feedback = FeedbackSystem(error_df, impact_df, language, max_tokens, criteria_path)
+    feedback = FeedbackSystem(error_df, language, max_tokens, criteria_path)
     feedback.process_feedback()
