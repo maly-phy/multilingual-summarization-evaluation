@@ -1,5 +1,5 @@
 import pandas as pd
-import os
+import os, sys
 from utils import initialize_model, read_json_criteria
 
 
@@ -15,27 +15,27 @@ class Refiner:
         system_prompt = "You are an experienced linguist and expert in refining meeting summaries to achieve the best quality.\n"
         for criterion, description in self.criteria.items():
             user_prompt = (
-                "You will be given a summary for a meeting transcript, a defined error type, along with a review that includes error instances present in the summary for the considered error type, and feedback suggestions to correct the error instances to obtain a high quality summary.\n"
-                "Your task is to refine the summary for the considered error type, based on the provided review to end up with the best version of the summary.\n"
+                "You will be given a summary for a meeting transcript, a defined error type, along with a feedback that includes suggestions to correct the errors present in the summary for the considered error type to end up with a high quality summary.\n"
+                "Your task is to refine the summary for the considered error type, based on the provided feedback to end up with the best version of the summary.\n"
                 "Please make sure you read and understand the following instructions carefully that guide you through the task.\n"
                 "1. Please read the following definition of the error type which will help you understand the task:\n"
                 f"{criterion}: {description['definition']}\n"
-                "2. Read the meeting transcript carefully and identify the main topics and key points discussed.\n"
+                "2. Read the meeting transcript carefully and identify the main topics and key points discussed. Please keep the transcript open while performing the task, and refer to it whenever needed.\n"
                 "3. Read the original summary carefully.\n"
-                "4. Consider the error instances, and understand the suggested changes.\n"
-                "5. Refine the summary based on the feedback provided for each instance.\n"
-                "6. At the end, make sure that your ultimate refined summary is coherent, readable and contextually accurate according to the original meeting transcript.\n\n"
+                "4. Consider the feedback and understand the suggested changes.\n"
+                "Please pay more attention to the suggestions that can improve the summary significantly, especially those of the more severe error instances (3-5 severity score).\n"
+                "5. Refine the summary based on the feedback provided.\n"
+                "You can look up the original meeting transcript to pick content or information that suffices the feedback, if needed.\n"
+                "6. At the end, make sure that your ultimate refined summary is coherent, readable and contextually accurate according to the original meeting transcript. It also must maintain the length of the original summary (around 250 words).\n\n"
                 "Now, you should perform the task, given the following inputs:\n"
                 f"Meeting transcript: {meeting_transcript}\n"
                 f"Summary: {model_summary if criterion == 'Redundancy' else update_refined_summary['Refined summary']}\n"
-                f"List of error instances with feedback: {self.feedback_df.iloc[idx][criterion]}\n\n"
-                "Please return only the refined summary strictly in **valid JSON format**, using **double quotes** for keys and values without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
-                "{\n"
-                '  "Refined summary": "<your refined summary>"\n'
-                "}"
+                f"Feedback: {self.feedback_df.iloc[idx][criterion]}\n\n"
+                "Please return only the refined summary without any extra preambles, explanations, or text:\n"
+                "<your refined summary>"
             )
             response = model_init.call_model(system_prompt, user_prompt)
-            update_refined_summary["Refined summary"] = response["Refined summary"]
+            update_refined_summary["Refined summary"] = response
         return update_refined_summary
 
     def iter_refine_summary(self):
@@ -66,9 +66,7 @@ class Refiner:
 if __name__ == "__main__":
     criteria_path = "multiagent_summary/error_types/error_types_eng.json"
     language = "English"
-    feedback_df_path = (
-        f"multiagent_summary/evaluation/{language}/error_based/feedback.csv"
-    )
+    feedback_df_path = f"multiagent_summary/evaluation/{language}/error_based/feedback_severe_error.csv"
     feedback_df = pd.read_csv(feedback_df_path)
     max_tokens = 3000
     # summary_refiner = Refiner(feedback_df, max_tokens, language, criteria_path)

@@ -28,7 +28,7 @@ class SeverityScorer:
                 "2. Read the summary and compare if it contains instances of the described error type.\n"
                 "3. Rate the summary based on the existence of the error type with yes when at least one instance of the error type is observed or no if the summary does not exhibit the error type.\n"
                 "4. If the error type exists, then write down every instance that is part of this error type, and specify its location (beginning, middle, or end of the summary).\n"
-                "- Please do not be too harsh and only point out errors if they are really an issue and impact the quality of the summary badly, otherwise be more of a friendly reviewer.\n"
+                "- Please focus only on error instances that are really an issue and impact the quality of the summary badly.\n"
                 "- Please consider only the previously defined error type and no other kind of errors in the summary, if found.\n"
                 "5. For every instance, write down a short reasoning thinking step-by-step of why this instance could be an error.\n"
                 "6. Rate the severity of the potential error instances, ranging from 1 (low severity) to 5 (high severity). Also provide a confidence score for your certainty, ranging from 0 (totally unsure) to 10 (totally sure).\n"

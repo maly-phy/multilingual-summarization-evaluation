@@ -24,7 +24,7 @@ class FeedbackSystem:
                 "2. Read the summary carefully.\n"
                 "3. Consider the list of observed error instances, the chain-of-thought reasoning of why they are considered errors, and the severity of the error instances which ranges from 1 (low severity) to 5 (high severity).\n"
                 "5. Provide your suggestions or changes that should be made to correct each error instance to end up with no or less impact of the error type on the quality of the summary.\n"
-                "Please pay more attention to the highly severe error instances that worsen the quality of the summary.\n"
+                "Please pay more attention to the mid-to-high severe errors (3-5 severity score) that worsen the quality of the summary.\n"
                 "6. Write down a short reasoning explaining why you consider these changes are effective towards improving the summary.\n"
                 "7. Additionally, provide a confidence score for your suggestions certainty, ranging from 0 (totally unsure) to 10 (totally sure).\n"
                 "Tip: Consider the whole input, i.e., the meeting transcript, the summary, and the error instances provided in the user's prompt to make a good decision that humans will agree on.\n\n"
@@ -33,11 +33,14 @@ class FeedbackSystem:
                 f"Summary: {model_summary}\n"
                 f"Error instances: {self.error_df.iloc[idx][criterion]}\n"
                 "Please ensure that your answer is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
-                "{\n"
+                "[{\n"
+                '  "instance": "<error instance>",\n'
+                '  "severity_score": "<1-5>",\n'
                 '  "feedback": "<your suggestions to correct the error instances for a high quality summary>",\n'
                 '  "reasoning": "<chain-of-thought reasoning>",\n'
                 '  "confidence_score": "<0-10>"\n'
-                "}"
+                "},\n"
+                "{<same for instance 2},...{<same for instance n>}]}"
             )
             response = model_init.call_model(system_prompt, user_prompt)
             if not response:
@@ -74,9 +77,7 @@ class FeedbackSystem:
             )
 
         output_df = pd.DataFrame(results)
-        save_dir = (
-            f"multiagent_summary/evaluation/{self.language}/error_based/feedback.csv"
-        )
+        save_dir = f"multiagent_summary/evaluation/{self.language}/error_based/feedback_severe_error.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
         output_df.to_csv(save_dir, index=False)
         print(f"Feedback results saved to {save_dir}")
@@ -86,9 +87,8 @@ if __name__ == "__main__":
     criteria_path = "multiagent_summary/error_types/error_types_eng.json"
     language = "English"
     error_df_path = (
-        f"multiagent_summary/evaluation/{language}/less_strict_error/error_severity.csv"
+        f"multiagent_summary/evaluation/{language}/error_based/error_severity.csv"
     )
-    impact_df_path = f"multiagent_summary/evaluation/{language}/less_strict_error/severity_impact.csv"
     error_df = pd.read_csv(error_df_path)
     max_tokens = 3000
     feedback = FeedbackSystem(error_df, language, max_tokens, criteria_path)
