@@ -67,11 +67,8 @@ class SeverityScorer:
             severity_eval = self.init_severity_eval(
                 model_init, model_summary, meeting_transcript
             )
-            if not severity_eval:
-                print(f"Failed to get severity evaluation for row {idx}, skipping...")
-                continue
-            if idx % 5 == 0:
-                print(f"Processed {idx} rows so far...")
+            if idx > 3:
+                break
 
             results.append(
                 {

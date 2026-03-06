@@ -1,6 +1,7 @@
 import pandas as pd
 import os, sys
 from utils import initialize_model, read_json_criteria
+import ast
 
 
 class Refiner:
@@ -11,9 +12,9 @@ class Refiner:
         self.criteria = read_json_criteria(criteria_path)
 
     def refine_summary(self, model_init, model_summary, meeting_transcript, idx):
-        update_refined_summary = {}
+        update_refined_summary = []
         system_prompt = "You are an experienced linguist and expert in refining meeting summaries to achieve the best quality.\n"
-        for criterion, description in self.criteria.items():
+        for i, (criterion, description) in enumerate(self.criteria.items()):
             user_prompt = (
                 "You will be given a summary for a meeting transcript, a defined error type, along with a feedback that includes suggestions to correct the errors present in the summary for the considered error type to end up with a high quality summary.\n"
                 "Your task is to refine the summary for the considered error type, based on the provided feedback to end up with the best version of the summary.\n"
@@ -23,19 +24,20 @@ class Refiner:
                 "2. Read the meeting transcript carefully and identify the main topics and key points discussed. Please keep the transcript open while performing the task, and refer to it whenever needed.\n"
                 "3. Read the original summary carefully.\n"
                 "4. Consider the feedback and understand the suggested changes.\n"
-                "Please pay more attention to the suggestions that can improve the summary significantly, especially those of the more severe error instances (3-5 severity score).\n"
+                "Please consider only the suggestions of the mid-to-high severity instances (3-5 severity score) whose corrections can improve the summary's quality significantly.\n"
                 "5. Refine the summary based on the feedback provided.\n"
                 "You can look up the original meeting transcript to pick content or information that suffices the feedback, if needed.\n"
-                "6. At the end, make sure that your ultimate refined summary is coherent, readable and contextually accurate according to the original meeting transcript. It also must maintain the length of the original summary (around 250 words).\n\n"
+                "Please keep the length of the refined summary within the length of the original summary (under 250 words).\n"
+                "6. At the end, make sure that your ultimate refined summary is coherent, readable, contextually accurate, and maintains the main topics and key points discussed in the meeting transcript.\n\n"
                 "Now, you should perform the task, given the following inputs:\n"
                 f"Meeting transcript: {meeting_transcript}\n"
-                f"Summary: {model_summary if criterion == 'Redundancy' else update_refined_summary['Refined summary']}\n"
+                f"Summary: {model_summary if criterion == 'Redundancy' else update_refined_summary[i-1][f'refined_summary_{i-1}']}\n"
                 f"Feedback: {self.feedback_df.iloc[idx][criterion]}\n\n"
                 "Please return only the refined summary without any extra preambles, explanations, or text:\n"
                 "<your refined summary>"
             )
             response = model_init.call_model(system_prompt, user_prompt)
-            update_refined_summary["Refined summary"] = response
+            update_refined_summary.append({f"refined_summary_{i}": response})
         return update_refined_summary
 
     def iter_refine_summary(self):
@@ -46,18 +48,15 @@ class Refiner:
             refined_summary = self.refine_summary(
                 model_init, model_summary, meeting_transcript, idx
             )
-            self.feedback_df.at[idx, "refined_summary"] = refined_summary[
-                "Refined summary"
-            ]
+            if idx > 3:
+                break
 
-            if not refined_summary["Refined summary"]:
-                print(f"Failed to get a valid response for index: {idx}")
-                continue
-
-            if idx % 5 == 0:
-                print(f"Processing {idx} rows so far ...")
-
-        save_dir = f"multiagent_summary/evaluation/{self.language}/error_based/refined_summary.csv"
+            print("refined summ length:", len(refined_summary), "\n")
+            for i in range(len(refined_summary)):
+                self.feedback_df.at[idx, f"refined_summary_{i}"] = refined_summary[i][
+                    f"refined_summary_{i}"
+                ]
+        save_dir = f"multiagent_summary/evaluation/{self.language}/error_based/sample_refined_summaries.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
         self.feedback_df.to_csv(save_dir, index=False)
         print(f"Refined summary saved to {save_dir}")
@@ -75,11 +74,16 @@ if __name__ == "__main__":
     from utils import text_chunker
 
     out_df = pd.read_csv(
-        f"multiagent_summary/evaluation/{language}/error_based/refined_summary.csv"
+        f"multiagent_summary/evaluation/{language}/error_based/sample_refined_summaries.csv"
     )
     out_file = f"multiagent_summary/outputs/{language}/refined_samples.txt"
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
-        for idx, row in out_df[:3].iterrows():
-            f.write(f"Refined Summary {idx}:\n")
-            f.write(f"{text_chunker(row['refined_summary'])}\n\n")
+        for idx, row in out_df[1:2].iterrows():
+            f.write(f"Original Model Summary:\n")
+            f.write(f"{text_chunker(row['model_summary'])}\n\n")
+            for i, criterion in enumerate(read_json_criteria(criteria_path).keys()):
+                f.write(f"{criterion} {i}:\n")
+                f.write(f"{row[criterion]}\n\n")
+                f.write(f"Refined Summary {i}:\n")
+                f.write(f"{text_chunker(row[f'refined_summary_{i}'])}\n\n")
