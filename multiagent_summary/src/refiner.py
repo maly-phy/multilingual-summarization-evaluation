@@ -79,7 +79,8 @@ if __name__ == "__main__":
     out_file = f"multiagent_summary/outputs/{language}/refined_samples.txt"
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
-        for idx, row in out_df[1:2].iterrows():
+        for idx, row in out_df[:2].iterrows():
+            f.write(f"*** Starting Summary {idx} ***\n\n")
             f.write(f"Original Model Summary:\n")
             f.write(f"{text_chunker(row['model_summary'])}\n\n")
             for i, criterion in enumerate(read_json_criteria(criteria_path).keys()):

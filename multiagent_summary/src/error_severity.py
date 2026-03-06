@@ -72,8 +72,6 @@ class SeverityScorer:
 
             results.append(
                 {
-                    "model_summary": model_summary,
-                    "meeting_transcript": meeting_transcript,
                     **{
                         f"{criterion}": severity_eval[criterion]
                         for criterion in self.criteria.keys()
@@ -82,7 +80,7 @@ class SeverityScorer:
             )
 
         output_df = pd.DataFrame(results)
-        save_dir = f"multiagent_summary/evaluation/{self.language}/less_strict_error/error_severity.csv"
+        save_dir = f"multiagent_summary/evaluation/{self.language}/test_samples/error_severity.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
         output_df.to_csv(save_dir, index=False)
         print(f"Severity results saved to {save_dir}")
@@ -100,7 +98,12 @@ if __name__ == "__main__":
     # init_severity.process_error_severity()
 
     out_df = pd.read_csv(
-        f"multiagent_summary/evaluation/{language}/less_strict_error/error_severity.csv"
+        f"multiagent_summary/evaluation/{language}/test_samples/error_severity.csv"
     )
-    with open(f"multiagent_summary/outputs/{language}/error_severity.json", "w") as f:
-        f.write(json.dumps(out_df.iloc[1]["Omission"], indent=4))
+    out_file = f"multiagent_summary/outputs/{language}/severity_samples.txt"
+    os.makedirs(os.path.dirname(out_file), exist_ok=True)
+    with open(out_file, "w") as f:
+        for idx, row in out_df.iterrows():
+            for i, criterion in enumerate(read_json_criteria(criteria_path).keys()):
+                f.write(f"{criterion} {i}:\n")
+                f.write(f"{row[criterion]}\n\n")
