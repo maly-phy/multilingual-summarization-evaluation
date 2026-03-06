@@ -18,37 +18,34 @@ class SeverityScorer:
             user_prompt = (
                 "You will be given a summary for a meeting transcript, a defined error type and two examples of the error.\n"
                 "Your tasks:\n"
-                "- Determine if the summary contains the error type.\n"
-                "- If the error exists, then find the instances, phrases or words in the summary that correspond to the defined error type.\n"
+                "- Search the summary to find the instances, phrases or words that are part of the defined error type.\n"
                 "- Rate the severity of the potential error instances.\n"
                 "Please make sure you read and understand the following instructions carefully that guide you through the tasks. Following is the error type you should consider:\n"
                 f"{criterion}: {description['definition']}.\n\n"
                 "Instructions:\n"
-                "1. Read the meeting transcript carefully and identify the main topics and key points discussed.\n"
-                "2. Read the summary and compare if it contains instances of the described error type.\n"
-                "3. Rate the summary based on the existence of the error type with yes when at least one instance of the error type is observed or no if the summary does not exhibit the error type.\n"
-                "4. If the error type exists, then write down every instance that is part of this error type, and specify its location (beginning, middle, or end of the summary).\n"
-                "- Please focus only on error instances that are really an issue and impact the quality of the summary badly.\n"
+                "1. Read the meeting transcript carefully and identify the main topics and key points discussed. Please keep the transcript open while performing the tasks, and refer to it whenever needed.\n"
+                "2. Read the summary and check if it contains instances of the described error type. Refer to the meeting transcript for sanity checking the error instances and to clarify any doubts, if necessary.\n"
+                "3. Write down every instance that is part of this error type, and specify its location (beginning, middle, or end of the summary).\n"
+                "- Please consider only the error instances that are really an issue and impact the quality of the summary badly.\n"
                 "- Please consider only the previously defined error type and no other kind of errors in the summary, if found.\n"
-                "5. For every instance, write down a short reasoning thinking step-by-step of why this instance could be an error.\n"
+                "5. Write down a short reasoning thinking step-by-step of why this instance could be an error.\n"
                 "6. Rate the severity of the potential error instances, ranging from 1 (low severity) to 5 (high severity). Also provide a confidence score for your certainty, ranging from 0 (totally unsure) to 10 (totally sure).\n"
                 "Tip: Consider the whole input, i.e., the meeting transcript and the summary, provided in the user's prompt to make a good decision that humans will agree on.\n"
                 "Below are two examples demonstrating the different severity levels of the previously described error type. Please learn from these examples the error pattern and how the rating works.\n"
                 f"Low severity example: {description['example']['low_severity']}\n"
                 f"High severity example: {description['example']['high_severity']}\n\n"
-                f"You should now perform the error search on the following summary: {model_summary}\n"
-                f"The original meeting transcript for look up: {meeting_transcript}\n"
-                "Please ensure that each instance is provided strictly in **valid JSON format**, using **double quotes** for keys and values, and no additional text outside the JSON structure. Return your answer only in the following format:\n"
+                f"Now, you should perform the tasks, given the following inputs:\n"
+                f"Meeting transcript: {meeting_transcript}\n"
+                f"Summary: {model_summary}\n"
+                "Please ensure that each instance is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without extra preambles, explanations, or text outside the JSON structure. Return your answer only in the following format:\n"
                 "[{\n"
-                '  "error_exists": <yes or no depending on you decision>,\n'
-                '  "instance": "<text passage, sentence or words from summary, if error exists else "">",\n'
-                '  "location": "<beginning, middle or end of the summary if error exists else "">",\n'
-                '  "reasoning": "<chain-of-thought reasoning if error exists else "">",\n'
-                '  "severity_score": "<1-5 if error exists else "">",\n'
-                '  "confidence_score": "<0-10 if error exists else "">"\n'
+                '  "instance": "<text passage, sentence or words from summary>",\n'
+                '  "location": "<beginning, middle or end of the summary>",\n'
+                '  "reasoning": "<chain-of-thought reasoning>",\n'
+                '  "severity_score": "<1-5>",\n'
+                '  "confidence_score": "<0-10>"\n'
                 "},\n"
-                "{<same for instance 2>},...{<same for instance n>}]\n"
-                "Make sure the output is strictly valid JSON, with no preambles, extra explanations, or text outside the JSON structure."
+                "{<same for instance 2>},...{<same for instance n>}]"
             )
             response = model_init.call_model(system_prompt, user_prompt)
             if not response:
@@ -72,6 +69,7 @@ class SeverityScorer:
 
             results.append(
                 {
+                    "model_summary": model_summary,
                     **{
                         f"{criterion}": severity_eval[criterion]
                         for criterion in self.criteria.keys()
@@ -94,16 +92,20 @@ if __name__ == "__main__":
     df_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
     df = pd.read_csv(df_path)
     max_tokens = 3000
-    # init_severity = SeverityScorer(df, language, max_tokens, criteria_path)
-    # init_severity.process_error_severity()
+    init_severity = SeverityScorer(df, language, max_tokens, criteria_path)
+    init_severity.process_error_severity()
+
+    from utils import text_chunker
 
     out_df = pd.read_csv(
         f"multiagent_summary/evaluation/{language}/test_samples/error_severity.csv"
     )
-    out_file = f"multiagent_summary/outputs/{language}/severity_samples.txt"
+    out_file = f"multiagent_summary/outputs/{language}/severity_samples2.txt"
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
         for idx, row in out_df.iterrows():
+            f.write(f"*** Starting Summary {idx} ***\n\n")
+            f.write(f"{text_chunker(row['model_summary'])}\n")
             for i, criterion in enumerate(read_json_criteria(criteria_path).keys()):
                 f.write(f"{criterion} {i}:\n")
                 f.write(f"{row[criterion]}\n\n")
