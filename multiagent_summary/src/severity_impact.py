@@ -5,16 +5,20 @@ from utils import initialize_model
 
 
 class SeverityImpactScorer:
-    def __init__(self, severity_df, language, max_tokens, criteria_path):
-        self.severity_df = severity_df
+    def __init__(self, language, max_tokens, criteria_path, exclude_criteria=None):
         self.language = language
         self.max_tokens = max_tokens
         self.criteria = read_json_criteria(criteria_path)
+        self.exclude_criteria = exclude_criteria
 
-    def severity_impact(self, model_init, model_summary, meeting_transcript, idx):
+    def severity_impact(
+        self, model_init, model_summary, meeting_transcript, severity_df, idx
+    ):
         system_prompt = "You are an experienced linguist and expert in evaluating the impact of linguistic errors on the quality of meeting summaries."
         summary_quality = {}
         for criterion, description in self.criteria.items():
+            if self.exclude_criteria and criterion in self.exclude_criteria:
+                continue
             user_prompt = (
                 "You will be given a summary for a meeting transcript, a defined error type, and a list of potential error instances extracted from the summary for the considered error type.\n"
                 "You task is to rate the quality of the summary considering the actual error instances and their severity.\n"
@@ -34,7 +38,7 @@ class SeverityImpactScorer:
                 "Now, you should perform the task given the following inputs:\n"
                 f"Meeting transcript: {meeting_transcript}\n"
                 f"Summary: {model_summary}\n"
-                f"Potential Error instances: {self.severity_df.iloc[idx][criterion]}\n"
+                f"Potential Error instances: {severity_df.iloc[idx][criterion]}\n"
                 "Please ensure that your answer is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
                 "{\n"
                 '  "impact_score": "<0-5>",\n'
@@ -50,14 +54,14 @@ class SeverityImpactScorer:
 
         return summary_quality
 
-    def process_severity_impact(self):
+    def process_severity_impact(self, severity_df):
         model_init = initialize_model(max_tokens=self.max_tokens)
         results = []
-        for idx, row in self.severity_df.iterrows():
+        for idx, row in severity_df.iterrows():
             model_summary = row["model_summary"]
             meeting_transcript = row["meeting_transcript"]
             impact_eval = self.severity_impact(
-                model_init, model_summary, meeting_transcript, idx
+                model_init, model_summary, meeting_transcript, severity_df, idx
             )
             if not impact_eval:
                 print(f"Failed to get impact evaluation for row {idx}, skipping...")
@@ -93,10 +97,8 @@ if __name__ == "__main__":
     )
     severity_df = pd.read_csv(severity_df_path)
     max_tokens = 3000
-    # init_severity = SeverityImpactScorer(
-    #     severity_df, language, max_tokens, criteria_path
-    # )
-    # init_severity.process_severity_impact()
+    init_severity = SeverityImpactScorer(language, max_tokens, criteria_path)
+    init_severity.process_severity_impact(severity_df)
 
     out_df = pd.read_csv(
         f"multiagent_summary/evaluation/{language}/error_based/error_severity.csv"

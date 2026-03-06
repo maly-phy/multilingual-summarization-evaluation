@@ -4,16 +4,20 @@ from utils import read_json_criteria, initialize_model
 
 
 class FeedbackSystem:
-    def __init__(self, error_df, language, max_tokens, criteria_path):
-        self.error_df = error_df
+    def __init__(self, language, max_tokens, criteria_path, exclude_criteria=None):
         self.language = language
         self.max_tokens = max_tokens
         self.criteria = read_json_criteria(criteria_path)
+        self.exclude_criteria = exclude_criteria
 
-    def get_feedback(self, model_init, model_summary, meeting_transcript, idx):
+    def get_feedback(
+        self, model_init, model_summary, meeting_transcript, error_df, idx
+    ):
         system_prompt = "You are an expert in analyzing the linguistic errors in meeting summaries. You help with providing feedback to fix the errors and improve the quality of the summaries."
         collect_feedback = {}
         for criterion, description in self.criteria.items():
+            if self.exclude_criteria and criterion in self.exclude_criteria:
+                continue
             user_prompt = (
                 "You will be given a summary for a meeting transcript, a defined error type, a list of potential error instances extracted from the summary for the considered error type, accompanied with their severity scores.\n"
                 "Your task is to provide feedback and suggestions on how to correct the error instances found in the summary for the considered error type. What changes would you propose to reduce the error's impact on the quality of the summary?\n"
@@ -31,7 +35,7 @@ class FeedbackSystem:
                 "Now, you should perform the task, given the following inputs:\n"
                 f"Meeting transcript: {meeting_transcript}\n"
                 f"Summary: {model_summary}\n"
-                f"Error instances: {self.error_df.iloc[idx][criterion]}\n"
+                f"Error instances: {error_df.iloc[idx][criterion]}\n"
                 "Please ensure that your answer is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
                 "[{\n"
                 '  "instance": "<error instance>",\n'
@@ -50,14 +54,14 @@ class FeedbackSystem:
 
         return collect_feedback
 
-    def process_feedback(self):
+    def process_feedback(self, error_df):
         model_init = initialize_model(max_tokens=self.max_tokens)
         results = []
-        for idx, row in self.error_df.iterrows():
+        for idx, row in error_df.iterrows():
             model_summary = row["model_summary"]
             meeting_transcript = row["meeting_transcript"]
             feedback = self.get_feedback(
-                model_init, model_summary, meeting_transcript, idx
+                model_init, model_summary, meeting_transcript, error_df, idx
             )
             if not feedback:
                 print(f"Failed to get feedback for row {idx}, skipping...")
@@ -91,5 +95,5 @@ if __name__ == "__main__":
     )
     error_df = pd.read_csv(error_df_path)
     max_tokens = 3000
-    feedback = FeedbackSystem(error_df, language, max_tokens, criteria_path)
-    feedback.process_feedback()
+    feedback = FeedbackSystem(language, max_tokens, criteria_path)
+    feedback.process_feedback(error_df)
