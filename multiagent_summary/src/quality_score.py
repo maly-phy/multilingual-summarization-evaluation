@@ -7,12 +7,12 @@ class SummQualityScorer:
     def __init__(self, language, exclude_criteria=None):
         self.language = language
         self.weight_importances = {
-            "Hallucination": 1.0,
-            "Omission": 1.1,
-            "Irrelevance": 1.1,
+            "Omission": 1.0,
             "Redundancy": 0.9,
             "Incoherence": 0.9,
             "Linguistic Inaccuracy": 0.9,
+            "Hallucination": 1.0,
+            "Irrelevance": 1.0,
             "Structure": 0.9,
         }
         self.exclude_criteria = exclude_criteria

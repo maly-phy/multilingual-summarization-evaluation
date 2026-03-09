@@ -38,9 +38,10 @@ class MultiagentSummaryIterator:
 
     def agent_iter(self, rounds):
         for j in range(rounds):
+            print(f"*** Starting iteration {j}/{rounds} ***\n\n")
             start_round_time = time.time()
             summary_quality_scores = []
-            for idx, row in self.df[:2].iterrows():
+            for idx, row in self.df.iterrows():
                 model_summary = row["model_factual_summary"]
                 meeting_transcript = row["Meeting"]
                 self.out_df.at[f"{j}_{idx}", "model_summary"] = model_summary
@@ -53,25 +54,25 @@ class MultiagentSummaryIterator:
                     print(
                         f"Processing criterion {i}/{len(self.criteria)} | summary {idx}/{len(self.df[:2])} | iteration {j}\n"
                     )
-                    summary_to_process = (
-                        model_summary
-                        if j == 0 and i == 0
-                        else (
-                            update_refined_summary[
+
+                    summary_to_process = model_summary
+                    for k in range(len(update_refined_summary)):
+                        if (
+                            i == 0
+                            and j > 0
+                            and f"iter_{j-1}_criterion_{len(self.criteria) - 1}_refined_{idx}"
+                            in update_refined_summary[k]
+                        ):
+                            summary_to_process = update_refined_summary[k][
                                 f"iter_{j-1}_criterion_{len(self.criteria) - 1}_refined_{idx}"
                             ]
-                            if j > 0 and i == 0
-                            else (
-                                update_refined_summary[
-                                    f"iter_{j}_criterion_{i-1}_refined_{idx}"
-                                ]
-                                if j > 0 and i > 0
-                                else update_refined_summary[
-                                    f"iter_{j}_criterion_{i-1}_refined_{idx}"
-                                ]
-                            )
-                        )
-                    )
+                        elif (
+                            f"iter_{j}_criterion_{i-1}_refined_{idx}"
+                            in update_refined_summary[k]
+                        ):
+                            summary_to_process = update_refined_summary[k][
+                                f"iter_{j}_criterion_{i-1}_refined_{idx}"
+                            ]
 
                     severity_response = self.severity_scorer.severity_prompt(
                         self.model_init,
@@ -139,12 +140,14 @@ class MultiagentSummaryIterator:
                 )
                 nums, denos = 0.0, 0.0
 
-            print(f"Round {j} completed in {time.time() - start_round_time} seconds\n")
+            print(
+                f"Round {j} completed in {(time.time() - start_round_time) / 60} minutes\n\n"
+            )
         save_dir = (
-            f"multiagent_summary/evaluation/{self.language}/test_samples/agent_loop.csv"
+            f"multiagent_summary/evaluation/{self.language}/agent_loop/agent_iter.csv"
         )
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
-        self.out_df.to_csv(save_dir, index=False)
+        self.out_df.to_csv(save_dir, index=True)
         print(f"Agent Loop results saved to {save_dir}\n")
 
 
@@ -155,9 +158,28 @@ if __name__ == "__main__":
     df = pd.read_csv(df_path)
     max_tokens = 3000
     exclude_criteria = ["Hallucination", "Structure", "Irrelevance"]
+    rounds = 5
     multiagent_iterator = MultiagentSummaryIterator(
         df, language, max_tokens, criteria_path, exclude_criteria
     )
     start_time = time.time()
-    multiagent_iterator.agent_iter(2)
-    print(f"Full agent loops completed in {time.time() - start_time} seconds")
+    multiagent_iterator.agent_iter(rounds)
+    print(f"Full agent loops completed in {(time.time() - start_time) / 60} minutes")
+
+    # from utils import text_chunker
+    # out_df = pd.read_csv(
+    #     f"multiagent_summary/evaluation/{language}/test_samples/agent_loop.csv"
+    # )
+    # out_file = f"multiagent_summary/outputs/{language}/agent_loop_samples.txt"
+    # os.makedirs(os.path.dirname(out_file), exist_ok=True)
+    # with open(out_file, "w") as f:
+    #     for idx, row in out_df.iterrows():
+    #         f.write(f"*** Starting Summary {idx} ***\n\n")
+    #         for i, criterion in enumerate(read_json_criteria(criteria_path).keys()):
+    #             if criterion in exclude_criteria:
+    #                 continue
+    #             f.write(f"{criterion}\n\n")
+    #             f.write(f"{row[f'feedback_{criterion}']}\n\n")
+    #             f.write(f"{text_chunker(row[f'refined_{criterion}'])}\n\n")
+
+    #         f.write(f"{row['summary_quality']}\n\n")
