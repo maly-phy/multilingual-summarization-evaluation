@@ -38,7 +38,7 @@ class MultiagentSummaryIterator:
 
     def agent_iter(self, rounds):
         for j in range(rounds):
-            print(f"*** Starting iteration {j}/{rounds} ***\n\n")
+            print(f"*** Starting iteration {j}/{rounds} ***\n")
             start_round_time = time.time()
             summary_quality_scores = []
             for idx, row in self.df.iterrows():
@@ -52,7 +52,7 @@ class MultiagentSummaryIterator:
                     if self.exclude_criteria and criterion in self.exclude_criteria:
                         continue
                     print(
-                        f"Processing criterion {i}/{len(self.criteria)} | summary {idx}/{len(self.df[:2])} | iteration {j}\n"
+                        f"Processing criterion {i}/{len(self.criteria)} | summary {idx}/{len(self.df)} | iteration {j}\n"
                     )
 
                     summary_to_process = model_summary
