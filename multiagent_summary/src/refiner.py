@@ -4,9 +4,9 @@ from utils import initialize_model, read_json_criteria
 import ast
 
 
+# "Summary: {model_summary if criterion == 'Redundancy' else update_refined_summary[0]['refined_summary'] if i is None else update_refined_summary[i-1][f'refined_summary_{i-1}']}
 class Refiner:
-    def __init__(self, feedback_df, max_tokens, language, criteria_path):
-        self.feedback_df = feedback_df
+    def __init__(self, max_tokens, language, criteria_path):
         self.max_tokens = max_tokens
         self.language = language
         self.criteria = read_json_criteria(criteria_path)
@@ -19,8 +19,8 @@ class Refiner:
         model_summary,
         meeting_transcript,
         update_refined_summary,
-        i,
         row,
+        i=None,
     ):
         system_prompt = "You are an experienced linguist and expert in refining meeting summaries to achieve the best quality.\n"
         user_prompt = (
@@ -39,8 +39,8 @@ class Refiner:
             "6. At the end, make sure that your ultimate refined summary is coherent, readable, contextually accurate, and maintains the main topics and key points discussed in the meeting transcript.\n\n"
             "Now, you should perform the task, given the following inputs:\n"
             f"Meeting transcript: {meeting_transcript}\n"
-            f"Summary: {model_summary if criterion == 'Redundancy' else update_refined_summary[i-1][f'refined_summary_{i-1}']}\n"
-            f"Feedback: {row[criterion]}\n\n"
+            f"Summary: {model_summary}\n"
+            f"Feedback: {row[criterion] if criterion else row}\n\n"
             "Please return only the refined summary without any extra preambles, explanations, or text:\n"
             "<your refined summary>"
         )
@@ -57,16 +57,20 @@ class Refiner:
                 model_summary,
                 meeting_transcript,
                 update_refined_summary,
-                i,
                 row,
+                i=None,
             )
-            update_refined_summary.append({f"refined_summary_{i}": response})
+            update_refined_summary.append(
+                {f"refined_summary": response}
+                if i is None
+                else {f"refined_summary_{i}": response}
+            )
 
         return update_refined_summary
 
-    def process_refine_summary(self):
+    def process_refine_summary(self, feedback_df):
         model_init = initialize_model(max_tokens=self.max_tokens)
-        for idx, row in self.feedback_df.iterrows():
+        for idx, row in feedback_df.iterrows():
             model_summary = row["model_summary"]
             meeting_transcript = row["meeting_transcript"]
             refined_summary = self.refine_summary(
@@ -77,12 +81,12 @@ class Refiner:
 
             print("refined summ length:", len(refined_summary), "\n")
             for i in range(len(refined_summary)):
-                self.feedback_df.at[idx, f"refined_summary_{i}"] = refined_summary[i][
+                feedback_df.at[idx, f"refined_summary_{i}"] = refined_summary[i][
                     f"refined_summary_{i}"
                 ]
         save_dir = f"multiagent_summary/evaluation/{self.language}/error_based/sample_refined_summaries.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
-        self.feedback_df.to_csv(save_dir, index=False)
+        feedback_df.to_csv(save_dir, index=False)
         print(f"Refined summary saved to {save_dir}")
 
 
@@ -92,8 +96,8 @@ if __name__ == "__main__":
     feedback_df_path = f"multiagent_summary/evaluation/{language}/error_based/feedback_severe_error.csv"
     feedback_df = pd.read_csv(feedback_df_path)
     max_tokens = 3000
-    # summary_refiner = Refiner(feedback_df, max_tokens, language, criteria_path)
-    # summary_refiner.process_refine_summary()
+    summary_refiner = Refiner(max_tokens, language, criteria_path)
+    summary_refiner.process_refine_summary(feedback_df)
 
     from utils import text_chunker
 

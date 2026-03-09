@@ -1,11 +1,13 @@
 import pandas as pd
-import os
+import os, sys
 import pandas as pd
+import time
 from utils import read_json_criteria, initialize_model
 from error_severity import SeverityScorer
 from severity_impact import SeverityImpactScorer
 from quality_score import SummQualityScorer
 from feedback import FeedbackSystem
+from refiner import Refiner
 
 
 class MultiagentSummaryIterator:
@@ -17,67 +19,145 @@ class MultiagentSummaryIterator:
         self.exclude_criteria = exclude_criteria
         self.model_init = initialize_model(max_tokens=self.max_tokens)
         self.criteria = read_json_criteria(self.criteria_path)
-        self.impact_scorer = SeverityImpactScorer(
-            self.language, self.max_tokens, self.criteria_path, self.exclude_criteria
-        )
+        self.out_df = pd.DataFrame()
         self.severity_scorer = SeverityScorer(
+            self.df,
             self.language,
             self.max_tokens,
             self.criteria_path,
             self.exclude_criteria,
         )
+        self.impact_scorer = SeverityImpactScorer(
+            self.language, self.max_tokens, self.criteria_path, self.exclude_criteria
+        )
         self.quality_scorer = SummQualityScorer(self.language, self.exclude_criteria)
         self.feedback_system = FeedbackSystem(
             self.language, self.max_tokens, self.criteria_path, self.exclude_criteria
         )
+        self.refine_system = Refiner(self.max_tokens, self.language, self.criteria_path)
 
-    def agent_iter(self):
-        for i in range(5):
-            for idx, row in self.df.iterrows():
+    def agent_iter(self, rounds):
+        for j in range(rounds):
+            start_round_time = time.time()
+            summary_quality_scores = []
+            for idx, row in self.df[:2].iterrows():
                 model_summary = row["model_factual_summary"]
                 meeting_transcript = row["Meeting"]
-                severity_eval = self.severity_scorer.init_severity_eval(
-                    self.model_init, model_summary, meeting_transcript
-                )
-                severity_df = pd.DataFrame(
-                    [
-                        {
-                            **{
-                                f"{criterion}": severity_eval[criterion]
-                                for criterion in self.criteria.keys()
-                            }
-                        }
-                    ]
-                )
-                severity_impact = self.impact_scorer.severity_impact(
-                    self.model_init, model_summary, meeting_transcript, severity_df, idx
-                )
-                severity_impact_df = pd.DataFrame(
-                    [
-                        {
-                            **{
-                                f"{criterion}": severity_impact[criterion]
-                                for criterion in self.criteria.keys()
-                            }
-                        }
-                    ]
-                )
+                self.out_df.at[f"{j}_{idx}", "model_summary"] = model_summary
+                self.out_df.at[f"{j}_{idx}", "meeting_transcript"] = meeting_transcript
+                nums, denos = 0.0, 0.0
+                update_refined_summary = []
+                for i, (criterion, description) in enumerate(self.criteria.items()):
+                    if self.exclude_criteria and criterion in self.exclude_criteria:
+                        continue
+                    print(
+                        f"Processing criterion {i}/{len(self.criteria)} | summary {idx}/{len(self.df[:2])} | iteration {j}\n"
+                    )
+                    summary_to_process = (
+                        model_summary
+                        if j == 0 and i == 0
+                        else (
+                            update_refined_summary[
+                                f"iter_{j-1}_criterion_{len(self.criteria) - 1}_refined_{idx}"
+                            ]
+                            if j > 0 and i == 0
+                            else (
+                                update_refined_summary[
+                                    f"iter_{j}_criterion_{i-1}_refined_{idx}"
+                                ]
+                                if j > 0 and i > 0
+                                else update_refined_summary[
+                                    f"iter_{j}_criterion_{i-1}_refined_{idx}"
+                                ]
+                            )
+                        )
+                    )
+
+                    severity_response = self.severity_scorer.severity_prompt(
+                        self.model_init,
+                        criterion,
+                        description,
+                        summary_to_process,
+                        meeting_transcript,
+                    )
+                    feedback_response = self.feedback_system.feedback_prompt(
+                        model_init=self.model_init,
+                        criterion=None,
+                        description=description,
+                        model_summary=summary_to_process,
+                        meeting_transcript=meeting_transcript,
+                        row=severity_response,
+                    )
+                    refiner_response = self.refine_system.refiner_prompt(
+                        model_init=self.model_init,
+                        criterion=None,
+                        description=description,
+                        model_summary=summary_to_process,
+                        meeting_transcript=meeting_transcript,
+                        update_refined_summary=update_refined_summary,
+                        row=feedback_response,
+                        i=None,
+                    )
+
+                    update_refined_summary.append(
+                        {f"iter_{j}_criterion_{i}_refined_{idx}": refiner_response}
+                    )
+                    self.out_df.at[f"{j}_{idx}", f"severity_{criterion}"] = (
+                        severity_response
+                    )
+                    self.out_df.at[f"{j}_{idx}", f"feedback_{criterion}"] = (
+                        feedback_response
+                    )
+                    self.out_df.at[f"{j}_{idx}", f"refined_{criterion}"] = (
+                        refiner_response
+                    )
+
+                    severity_impact = self.impact_scorer.severity_impact_prompt(
+                        model_init=self.model_init,
+                        criterion=None,
+                        description=description,
+                        model_summary=summary_to_process,
+                        meeting_transcript=meeting_transcript,
+                        row=severity_response,
+                    )
+
+                    numerator, denominator = self.quality_scorer.impact_scores(
+                        row=severity_impact,
+                        criteria=None,
+                        weight=self.quality_scorer.weight_importances[criterion],
+                    )
+                    nums += numerator
+                    denos += denominator
 
                 overall_impact, summary_quality = (
-                    self.quality_scorer.weighted_severity_impact(
-                        severity_impact_df, idx
-                    )
+                    self.quality_scorer.calculate_overall_quality(nums, denos)
                 )
-                feedback = self.feedback_system.get_feedback(
-                    self.model_init, model_summary, meeting_transcript, severity_df, idx
+                self.out_df.at[f"{j}_{idx}", "overall_impact"] = overall_impact
+                self.out_df.at[f"{j}_{idx}", "summary_quality"] = summary_quality
+                summary_quality_scores.append(
+                    {f"iter_{j}_summary_{idx}": summary_quality}
                 )
-                feedback_df = pd.DataFrame(
-                    [
-                        {
-                            **{
-                                f"{criterion}": feedback[criterion]
-                                for criterion in self.criteria.keys()
-                            }
-                        }
-                    ]
-                )
+                nums, denos = 0.0, 0.0
+
+            print(f"Round {j} completed in {time.time() - start_round_time} seconds\n")
+        save_dir = (
+            f"multiagent_summary/evaluation/{self.language}/test_samples/agent_loop.csv"
+        )
+        os.makedirs(os.path.dirname(save_dir), exist_ok=True)
+        self.out_df.to_csv(save_dir, index=False)
+        print(f"Agent Loop results saved to {save_dir}\n")
+
+
+if __name__ == "__main__":
+    criteria_path = "multiagent_summary/error_types/error_types_eng.json"
+    language = "English"
+    df_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
+    df = pd.read_csv(df_path)
+    max_tokens = 3000
+    exclude_criteria = ["Hallucination", "Structure", "Irrelevance"]
+    multiagent_iterator = MultiagentSummaryIterator(
+        df, language, max_tokens, criteria_path, exclude_criteria
+    )
+    start_time = time.time()
+    multiagent_iterator.agent_iter(2)
+    print(f"Full agent loops completed in {time.time() - start_time} seconds")

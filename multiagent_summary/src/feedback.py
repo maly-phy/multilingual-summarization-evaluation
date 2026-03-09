@@ -31,7 +31,7 @@ class FeedbackSystem:
             "Now, you should perform the task, given the following inputs:\n"
             f"Meeting transcript: {meeting_transcript}\n"
             f"Summary: {model_summary}\n"
-            f"Error instances: {row[criterion]}\n"
+            f"Error instances: {row[criterion] if criterion else row}\n"
             "Please ensure that your answer is provided strictly in **valid JSON format**, using **double quotes** for keys and values, without any extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
             "[{\n"
             '  "instance": "<error instance>",\n'

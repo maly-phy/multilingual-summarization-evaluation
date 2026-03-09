@@ -18,12 +18,17 @@ class SummQualityScorer:
         self.exclude_criteria = exclude_criteria
 
     def impact_scores(self, row, criteria, weight):
-        criterion = ast.literal_eval(row[criteria])
+        criterion = ast.literal_eval(row[criteria] if criteria else row)
         impact_score = float(criterion["impact_score"])
         confidence_score = float(criterion["confidence_score"]) / 10
         numerator = impact_score * confidence_score * weight
         denominator = confidence_score * weight
         return numerator, denominator
+
+    def calculate_overall_quality(self, nums, denos):
+        overall_impact = nums / denos
+        summary_quality = 1 + (((5 - overall_impact) / 5) * 9)
+        return overall_impact, summary_quality
 
     def weighted_severity_impact(self, row):
         nums, denos = 0.0, 0.0
@@ -34,9 +39,7 @@ class SummQualityScorer:
             nums += numerator
             denos += denominator
 
-        overall_impact = nums / denos
-        summary_quality = 1 + (((5 - overall_impact) / 5) * 9)
-        return overall_impact, summary_quality
+        return self.calculate_overall_quality(nums, denos)
 
     def process_summary_quality(self, severity_impact_df):
         for idx, row in severity_impact_df.iterrows():
