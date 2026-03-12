@@ -3,15 +3,20 @@ import os
 from utils import initialize_model
 import ast
 from utils import read_json_criteria
+import time
 
 
 class MultiQualityJudge:
-    def __init__(self, df, max_tokens, language, criteria_path, exclude_criteria):
+    def __init__(
+        self, df, max_tokens, language, criteria_path, exclude_criteria, rounds
+    ):
         self.df = df
         self.max_tokens = max_tokens
         self.language = language
         self.exclude_criteria = exclude_criteria
         self.criteria = read_json_criteria(criteria_path)
+        self.rounds = rounds
+        self.out_df = pd.DataFrame()
 
     def multi_quality_prompt(self, model_init, meeting_transcript, refined_summaries):
         system_prompt = "You are an experienced linguist and expert in evaluating the quality of meeting summaries based on pre-defined criteria.\n"
@@ -71,28 +76,39 @@ class MultiQualityJudge:
 
     def process_multi_quality(self):
         model_init = initialize_model(max_tokens=self.max_tokens)
-        results = []
-        for idx, row in self.df.iterrows():
-            print(f"Processing row {idx}/{len(self.df)}\n")
-            meeting_transcript = row["Meeting"]
-            refined_summaries = self.collect_refined_summaries(idx)
-            llm_quality_score = self.multi_quality_prompt(
-                model_init, meeting_transcript, refined_summaries
-            )
-            llm_quality_score = ast.literal_eval(llm_quality_score)
-            results.append(
-                {
-                    f"refined_{criterion}_quality": [llm_quality_score[i]]
-                    for i, criterion in enumerate(self.criteria)
-                }
-            )
-            print(len(refined_summaries))
-            # del refined_summaries
+        for j in range(self.rounds):
+            print(f"*** Starting iteration {j}/{self.rounds} ***\n")
+            start_round_time = time.time()
+            for idx, row in self.df.iterrows():
+                print(f"Processing row {idx}/{len(self.df)}\n")
+                meeting_transcript = row["meeting_transcript"]
+                refined_summaries = self.collect_refined_summaries(idx)
+                llm_quality_score = self.multi_quality_prompt(
+                    model_init, meeting_transcript, refined_summaries
+                )
+                llm_quality_score = ast.literal_eval(llm_quality_score)
+                for i, criterion in enumerate(self.criteria):
+                    if self.exclude_criteria and criterion in self.exclude_criteria:
+                        continue
+                    print(
+                        f"Processing criterion {i}/{len(self.criteria)} | summary {idx}/{len(self.df)} | iteration {j}\n"
+                    )
+                    self.out_df.at[f"{j}_{idx}", f"refined_{criterion}_quality"] = [
+                        llm_quality_score[i]
+                    ]
 
-        out_df = pd.DataFrame(results)
-        save_dir = f"multiagent_summary/evaluation/{self.language}/agent_loop/refined_quality.csv"
+                avg_quality_score = sum(
+                    float(llm_quality_score[i]["llm_quality_score"])
+                    for i in range(len(llm_quality_score))
+                ) / len(llm_quality_score)
+                self.out_df.at[f"{j}_{idx}", "refined_llm_quality"] = avg_quality_score
+
+            print(
+                f"Round {j} completed in {(time.time() - start_round_time) / 60} minutes\n\n"
+            )
+        save_dir = f"multiagent_summary/evaluation/{self.language}/agent_loop/refined_llm_quality.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
-        out_df.to_csv(save_dir, index=False)
+        self.out_df.to_csv(save_dir, index=False)
         print(f"Quality results saved to {save_dir}")
 
 
@@ -103,7 +119,8 @@ if __name__ == "__main__":
     df = pd.read_csv(df_path)
     max_tokens = 3000
     exclude_criteria = ["Hallucination", "Structure", "Irrelevance"]
+    rounds = 5
     quality_judge = MultiQualityJudge(
-        df, max_tokens, language, criteria_path, exclude_criteria
+        df, max_tokens, language, criteria_path, exclude_criteria, rounds
     )
     quality_judge.process_multi_quality()

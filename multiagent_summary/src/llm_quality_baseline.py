@@ -50,55 +50,6 @@ class LLMQualityJudge:
         response = model_init.call_model(system_prompt, user_prompt)
         return response
 
-    def multi_quality_prompt(
-        self, model_init, meeting_transcript, refined_summaries, idx
-    ):
-        system_prompt = "You are an experienced linguist and expert in evaluating the quality of meeting summaries based on pre-defined criteria.\n"
-        user_prompt = (
-            "You will be given multiple summaries for a meeting transcript, and criteria that help you judge the quality of these summaries.\n"
-            "Your task is to evaluate the quality of each summary based on the provided criteria. How much each summary suffices and entails the criteria?\n"
-            "Please make sure you read and understand the following instructions carefully that guide you through the task.\n"
-            "1. Please consider the following judgement criteria:\n"
-            "- The summary should not contain any content-wise redundant information, that does not aid the understanding or contextualization.\n"
-            "- The summary should be coherent, maintain logical flow, relevance, and clarity within a sentence and across sentences.\n"
-            "- The summary should use appropriate language with correct and grammatical use. Language should not be ambiguous or unclear.\n"
-            "- The summary should not omit relevant content. Neither should content be completely absent nor relevant details be missing.\n"
-            "2. Read the meeting transcript carefully and identify the main topics and key points discussed. Please keep the transcript open while performing the task, and refer to it whenever needed.\n"
-            "3. Read the summaries carefully, and observe how each of them addresses the criteria provided.\n"
-            "4. Rate the quality of summaries based on the criteria provided, in a range from 1 (poor quality) to 10 (excellent quality).\n"
-            "5. Write a short explanation of why you rated the summaries as you did. Therefore, use chain-of-thought and think step-by-step.\n"
-            "6. Additionally, provide a confidence score for your rating certainty, in a range from 0 (totally unsure) to 10 (totally sure).\n"
-            "Now, you should perform the task, given the following inputs:\n"
-            f"Meeting transcript: {meeting_transcript}\n"
-            f"Summary 1: {refined_summaries[0]}\n"
-            f"Summary 2: {refined_summaries[1]}\n"
-            f"Summary 3: {refined_summaries[2]}\n"
-            f"Summary 4: {refined_summaries[3]}\n"
-            "Please return your answer strictly in a **valid JSON format**, using **double quotes** for keys and values, without extra preambles, explanations, or text outside the JSON structure. Make sure to return your answer strictly in the following format:\n"
-            "[{\n"
-            '  "llm_quality_score": "<1-10>",\n'
-            '  "reasoning": "<chain-of-thought reasoning>",\n'
-            '  "confidence": "<0-10>"\n'
-            "},\n"
-            "{\n"
-            '  "llm_quality_score": "<1-10>",\n'
-            '  "reasoning": "<chain-of-thought reasoning>",\n'
-            '  "confidence": "<0-10>"\n'
-            "},\n"
-            "{\n"
-            '  "llm_quality_score": "<1-10>",\n'
-            '  "reasoning": "<chain-of-thought reasoning>",\n'
-            '  "confidence": "<0-10>"\n'
-            "},\n"
-            "{\n"
-            '  "llm_quality_score": "<1-10>",\n'
-            '  "reasoning": "<chain-of-thought reasoning>",\n'
-            '  "confidence": "<0-10>"\n'
-            "}]"
-        )
-        response = model_init.call_model(system_prompt, user_prompt)
-        return response
-
     def process_llm_quality(self):
         model_init = initialize_model(max_tokens=self.max_tokens)
         results = []
