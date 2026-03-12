@@ -108,7 +108,7 @@ class MultiQualityJudge:
             )
         save_dir = f"multiagent_summary/evaluation/{self.language}/agent_loop/refined_llm_quality.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
-        self.out_df.to_csv(save_dir, index=False)
+        self.out_df.to_csv(save_dir, index=True)
         print(f"Quality results saved to {save_dir}")
 
 
