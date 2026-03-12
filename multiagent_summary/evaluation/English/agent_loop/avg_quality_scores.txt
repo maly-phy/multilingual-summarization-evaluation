@@ -1,0 +1,6 @@
+Average Summary Quality (error based): 4.2823072817594126
+
+Average Refined Quality (LLM judge): 8.436666666666667
+
+Average Baseline Quality (reference and model summaries): 7.916666666666667
+
