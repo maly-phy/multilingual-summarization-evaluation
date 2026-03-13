@@ -4,3 +4,6 @@ src/__pycache__/
 multiagent_summary/evaluation/English/agent_loop/*.csv
 multiagent_summary/evaluation/English/error_based/
 multiagent_summary/evaluation/English/test_samples/
+multiagent_summary/evaluation/German/agent_loop/*.csv
+multiagent_summary/error_types/
+multiagent_summary/evaluation/German/test_samples/
