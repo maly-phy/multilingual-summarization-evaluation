@@ -7,3 +7,5 @@ multiagent_summary/evaluation/English/test_samples/
 multiagent_summary/evaluation/German/agent_loop/*.csv
 multiagent_summary/error_types/
 multiagent_summary/evaluation/German/test_samples/
+multiagent_summary/outputs/
+outputs/
