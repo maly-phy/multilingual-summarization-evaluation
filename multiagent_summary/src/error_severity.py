@@ -17,7 +17,7 @@ class SeverityScorer:
     ):
         system_prompt = "You are an experienced linguist and expert in identifying the error types present in meeting summaries and evaluating their severity."
         user_prompt = (
-            "You will be given a summary for a meeting transcript, a defined error type and two examples of the error.\n"
+            f"You will be given a summary for a meeting transcript in {self.language}, a defined error type and two examples of the error.\n"
             "Your tasks:\n"
             "- Search the summary to find the instances, phrases or words that are part of the defined error type.\n"
             "- Rate the severity of the potential error instances.\n"
@@ -47,6 +47,7 @@ class SeverityScorer:
             '  "confidence_score": "<0-10>"\n'
             "},\n"
             "{<same for instance 2>},...{<same for instance n>}]"
+            f"Please make sure to keep the language of your answer in {self.language}."
         )
         response = model_init.call_model(system_prompt, user_prompt)
         return response
@@ -73,7 +74,7 @@ class SeverityScorer:
                 model_init, model_summary, meeting_transcript
             )
 
-            if idx > 3:
+            if idx > 5:
                 break
             results.append(
                 {
@@ -95,8 +96,8 @@ class SeverityScorer:
 if __name__ == "__main__":
     import json
 
-    criteria_path = "multiagent_summary/error_types/error_types_eng.json"
-    language = "English"
+    criteria_path = "multiagent_summary/error_types/error_types_ger.json"
+    language = "German"
     df_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
     df = pd.read_csv(df_path)
     max_tokens = 3000
@@ -111,7 +112,7 @@ if __name__ == "__main__":
     out_df = pd.read_csv(
         f"multiagent_summary/evaluation/{language}/test_samples/error_severity.csv"
     )
-    out_file = f"multiagent_summary/outputs/{language}/severity_samples2.txt"
+    out_file = f"multiagent_summary/outputs/{language}/severity_samples.txt"
     os.makedirs(os.path.dirname(out_file), exist_ok=True)
     with open(out_file, "w") as f:
         for idx, row in out_df.iterrows():

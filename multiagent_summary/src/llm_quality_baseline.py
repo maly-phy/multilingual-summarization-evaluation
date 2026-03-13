@@ -15,7 +15,7 @@ class LLMQualityJudge:
     ):
         system_prompt = "You are an experienced linguist and expert in evaluating the quality of meeting summaries based on pre-defined criteria.\n"
         user_prompt = (
-            "You will be given two summaries for a meeting transcript, and criteria that help you judge the quality of these summaries.\n"
+            f"You will be given two summaries for a meeting transcript in {self.language}, and criteria that help you judge the quality of these summaries.\n"
             "Your task is to evaluate the quality of each summary based on the provided criteria. How much each summary suffices and entails the criteria?\n"
             "Please make sure you read and understand the following instructions carefully that guide you through the task.\n"
             "1. Please consider the following judgement criteria:\n"
@@ -46,6 +46,7 @@ class LLMQualityJudge:
             '  "reasoning": "<chain-of-thought reasoning>",\n'
             '  "confidence": "<0-10>"\n'
             "}]"
+            f"Please make sure to keep the language of your answer in {self.language}."
         )
         response = model_init.call_model(system_prompt, user_prompt)
         return response
@@ -70,14 +71,14 @@ class LLMQualityJudge:
             )
 
         out_df = pd.DataFrame(results)
-        save_dir = f"multiagent_summary/evaluation/{self.language}/agent_loop/quality_baseline2.csv"
+        save_dir = f"multiagent_summary/evaluation/{self.language}/agent_loop/quality_baseline.csv"
         os.makedirs(os.path.dirname(save_dir), exist_ok=True)
         out_df.to_csv(save_dir, index=False)
         print(f"Quality results saved to {save_dir}")
 
 
 if __name__ == "__main__":
-    language = "English"
+    language = "German"
     df_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
     df = pd.read_csv(df_path)
     max_tokens = 3000

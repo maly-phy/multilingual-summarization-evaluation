@@ -16,7 +16,7 @@ class SeverityImpactScorer:
     ):
         system_prompt = "You are an experienced linguist and expert in evaluating the impact of linguistic errors on the quality of meeting summaries."
         user_prompt = (
-            "You will be given a summary for a meeting transcript, a defined error type, and a list of potential error instances extracted from the summary for the considered error type.\n"
+            f"You will be given a summary for a meeting transcript in {self.language}, a defined error type, and a list of potential error instances extracted from the summary for the considered error type.\n"
             "You task is to rate the quality of the summary considering the actual error instances and their severity.\n"
             "Please make sure you read and understand the following instructions carefully that guide you through the task. Following is the error type you should consider:\n"
             f"{criterion}: {description['definition']}.\n\n"
@@ -41,6 +41,7 @@ class SeverityImpactScorer:
             '  "reasoning": "<your reasoning>",\n'
             '  "confidence_score": "<0-10>"\n'
             "}"
+            f"Please make sure to keep the language of your answer in {self.language}."
         )
         response = model_init.call_model(system_prompt, user_prompt)
         return response

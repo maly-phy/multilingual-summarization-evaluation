@@ -64,7 +64,7 @@ def save_avg_scores(results_dir, save_dir):
 
 
 if __name__ == "__main__":
-    language = "English"
+    language = "German"
     rounds = 5
     df_agent_iter = pd.read_csv(
         f"multiagent_summary/evaluation/{language}/agent_loop/agent_iter.csv"

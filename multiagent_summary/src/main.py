@@ -152,12 +152,12 @@ class MultiagentSummaryIterator:
 
 
 if __name__ == "__main__":
-    criteria_path = "multiagent_summary/error_types/error_types_eng.json"
-    language = "English"
+    criteria_path = "multiagent_summary/error_types/error_types_ger.json"
+    language = "German"
     df_path = f"evaluation/{language}/atomic_facts/corrected_summary.csv"
     df = pd.read_csv(df_path)
     max_tokens = 3000
-    exclude_criteria = ["Hallucination", "Structure", "Irrelevance"]
+    exclude_criteria = None  # ["Hallucination", "Structure", "Irrelevance"]
     rounds = 5
     multiagent_iterator = MultiagentSummaryIterator(
         df, language, max_tokens, criteria_path, exclude_criteria

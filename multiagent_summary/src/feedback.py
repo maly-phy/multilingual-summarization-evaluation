@@ -15,7 +15,7 @@ class FeedbackSystem:
     ):
         system_prompt = "You are an expert in analyzing the linguistic errors in meeting summaries. You help with providing feedback to fix the errors and improve the quality of the summaries."
         user_prompt = (
-            "You will be given a summary for a meeting transcript, a defined error type, a list of potential error instances extracted from the summary for the considered error type, accompanied with their severity scores.\n"
+            f"You will be given a summary for a meeting transcript in {self.language}, a defined error type, a list of potential error instances extracted from the summary for the considered error type, accompanied with their severity scores.\n"
             "Your task is to provide feedback and suggestions on how to correct the error instances found in the summary for the considered error type. What changes would you propose to reduce the error's impact on the quality of the summary?\n"
             "Please make sure you read and understand the following instructions carefully that guide you through the task. Following is the error type you should consider:\n"
             f"{criterion}: {description['definition']}.\n\n"
@@ -41,6 +41,7 @@ class FeedbackSystem:
             '  "confidence_score": "<0-10>"\n'
             "},\n"
             "{<same for instance 2},...{<same for instance n>}]}"
+            f"Please make sure to keep the language of your answer in {self.language}."
         )
         response = model_init.call_model(system_prompt, user_prompt)
         return response

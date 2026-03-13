@@ -80,7 +80,7 @@ class QualityVisualizer:
 
 if __name__ == "__main__":
     rounds = 5
-    language = "English"
+    language = "German"
     df = pd.read_csv(
         f"multiagent_summary/evaluation/{language}/agent_loop/refined_llm_quality.csv"
     )

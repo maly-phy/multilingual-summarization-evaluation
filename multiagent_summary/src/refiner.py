@@ -24,7 +24,7 @@ class Refiner:
     ):
         system_prompt = "You are an experienced linguist and expert in refining meeting summaries to achieve the best quality.\n"
         user_prompt = (
-            "You will be given a summary for a meeting transcript, a defined error type, along with a feedback that includes suggestions to correct the errors present in the summary for the considered error type to end up with a high quality summary.\n"
+            f"You will be given a summary for a meeting transcript in {self.language}, a defined error type, along with a feedback that includes suggestions to correct the errors present in the summary for the considered error type to end up with a high quality summary.\n"
             "Your task is to refine the summary for the considered error type, based on the provided feedback to end up with the best version of the summary.\n"
             "Please make sure you read and understand the following instructions carefully that guide you through the task.\n"
             "1. Please read the following definition of the error type which will help you understand the task:\n"
@@ -41,7 +41,7 @@ class Refiner:
             f"Meeting transcript: {meeting_transcript}\n"
             f"Summary: {model_summary}\n"
             f"Feedback: {row[criterion] if criterion else row}\n\n"
-            "Please return only the refined summary without any extra preambles, explanations, or text:\n"
+            f"Please return only the refined summary without any extra preambles, explanations, or text. Please make sure to keep the language of your answer in {self.language}.\n"
             "<your refined summary>"
         )
         response = model_init.call_model(system_prompt, user_prompt)
